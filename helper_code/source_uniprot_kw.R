@@ -4,6 +4,12 @@
 # Also yields the actively-curated UniProt protein-family classification (group /
 # family / subfamily), used as the primary, up-to-date taxonomy source.
 
+# Manning kinase groups. The leading token of a UniProt protein-kinase family string is
+# the Manning group ONLY for these codes; anything else (e.g. "Ser/Thr" from a prefix-less
+# "Ser/Thr protein kinase family", or "Hexokinase"/"Adenylate" from a non-protein-kinase
+# family) is not a group and must not populate kinase_group.
+MANNING_GROUP_CODES <- c("AGC","CAMK","CK1","CMGC","NEK","RGC","STE","TK","TKL","Other","Atypical")
+
 # Parse a UniProt "Protein families" string, e.g.
 #   "Protein kinase superfamily, AGC Ser/Thr protein kinase family, RAC subfamily"
 # into group ("AGC"), family ("AGC Ser/Thr protein kinase family"), subfamily ("RAC").
@@ -19,8 +25,9 @@ parse_uniprot_protein_family <- function(families_string) {
   family    <- if (any(is_family))    parts[is_family][1] else NA_character_
   subfamily <- if (any(is_subfamily)) str_trim(str_remove(parts[is_subfamily][1],
                                        regex("\\s*subfamily$", ignore_case = TRUE))) else NA_character_
-  group <- if (!is.na(family)) str_split(family, "\\s+")[[1]][1] else NA_character_  # leading token = Manning group
-  if (!is.na(group) && group == "Tyr") group <- "TK"                                # match Manning/KinHub label
+  group <- if (!is.na(family)) str_split(family, "\\s+")[[1]][1] else NA_character_  # leading token of the family
+  if (!is.na(group) && group == "Tyr") group <- "TK"                                # UniProt label -> Manning label
+  if (!is.na(group) && !(group %in% MANNING_GROUP_CODES)) group <- NA_character_     # only real Manning groups
   list(group = group, family = family, subfamily = subfamily)
 }
 

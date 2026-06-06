@@ -13,7 +13,7 @@ an offline, reproducible rerun of the cached files.
 | `go_mf_genesets_ensembl.gmt` | GO molecular-function gene sets, Ensembl-keyed (Bader Lab EM_Genesets) | https://download.baderlab.org/EM_Genesets/current_release/Human/ensembl/GO/Human_GO_mf_with_GO_iea_ensembl.gmt |
 | `kinase.com_manning_list.xls` | Manning human kinome (kinase.com, 2002) | https://raw.githubusercontent.com/IDG-Kinase/DarkKinaseTools/master/data-raw/dark_kinases/kinase.com_list.xls |
 | `kinhub_kinases.html` | KinHub human kinase list (kinhub.org; Eid et al. 2017) | http://www.kinhub.org/kinases.html |
-| `uniprot_kinase_KW-0418_human.tsv` | UniProtKB reviewed human, keyword KW-0418 "Kinase" | https://rest.uniprot.org/uniprotkb/stream?query=(organism_id:9606)AND(reviewed:true)AND(keyword:KW-0418) |
+| `uniprot_kinase_KW-0418_human.tsv` | UniProtKB reviewed human, keyword KW-0418 "Kinase" (membership + `protein_families` taxonomy) | https://rest.uniprot.org/uniprotkb/stream?query=(organism_id:9606)AND(reviewed:true)AND(keyword:KW-0418)&fields=accession,gene_primary,protein_name,ec,protein_families |
 | `IDG_dark_kinase_list.csv` | IDG understudied ("dark") kinome | https://github.com/IDG-Kinase/DarkKinaseTools (data-raw/dark_kinases/Dark Kinase List.csv) |
 
 Notes
@@ -21,11 +21,18 @@ Notes
   mapped to a base Ensembl gene ID through HGNC (by Entrez, then UniProt accession, then
   current/alias/previous symbol). The GO gene sets are already Ensembl-keyed, so they need
   no mapping.
-- Kinase taxonomy (group / family / subfamily) is primarily the actively-curated UniProt
-  `protein_families` classification (group + subfamily), with the Manning intermediate
-  "family" tier from KinHub/kinase.com; each field is filled UniProt -> KinHub -> kinase.com.
-  KinHub (2017) and kinase.com (2002) are static, so UniProt is what keeps current kinases
-  assigned to the (fixed) Manning scheme.
+- Kinase taxonomy is assigned per field (each "first non-blank" across the listed sources):
+  - `kinase_group`     : UniProt -> KinHub -> kinase.com. The UniProt value is the leading
+                         token of its `protein_families` string (with `Tyr` -> `TK`), accepted
+                         ONLY if it is a real Manning group (AGC/CAMK/CK1/CMGC/NEK/RGC/STE/TK/
+                         TKL/Other/Atypical); otherwise NA so KinHub/kinase.com fill it. Non-
+                         protein kinases get no group.
+  - `kinase_family`    : KinHub -> kinase.com only (the Manning short tier: Akt, CDK, FGFR ...).
+                         UniProt's verbose family string is NOT used here.
+  - `kinase_subfamily` : UniProt -> KinHub -> kinase.com.
+  - `uniprot_protein_family` : the raw UniProt `Protein families` string, verbatim.
+  KinHub (2017) and kinase.com (2002) are static, so UniProt keeps current kinases assigned
+  to the (fixed) Manning group/subfamily scheme.
 - Resolution guards against stale source identifiers: a candidate that is an RNA-gene locus,
   or whose HGNC symbol history disagrees with the source symbol, is rejected in favour of a
   consistent hit (see `helper_code/hgnc_bridge.R`).
