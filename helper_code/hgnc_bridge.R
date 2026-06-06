@@ -20,21 +20,21 @@ build_hgnc_bridge <- function(hgnc_complete_set_path) {
   # Only rows that carry an Ensembl gene ID can be keyed.
   genes_with_ensembl <- approved_genes %>% filter(!is.na(ensembl_gene_id), ensembl_gene_id != "")
 
-  # KEY -> ensembl maps, keeping the first occurrence of each key (file order).
+  # KEY -> ensembl maps (named vectors used as hash maps), first occurrence of each key wins.
   entrez_id_to_ensembl <- genes_with_ensembl %>%
     filter(!is.na(entrez_id), entrez_id != "") %>%
     distinct(entrez_id, .keep_all = TRUE) %>%
-    { setNames(.$ensembl_gene_id, .$entrez_id) }
+    select(entrez_id, ensembl_gene_id) %>% deframe()
 
   uniprot_accession_to_ensembl <- genes_with_ensembl %>%
     transmute(ensembl_gene_id, uniprot_accession = map(uniprot_ids, split_pipe_delimited)) %>%
     unnest(uniprot_accession) %>%
     distinct(uniprot_accession, .keep_all = TRUE) %>%
-    { setNames(.$ensembl_gene_id, .$uniprot_accession) }
+    select(uniprot_accession, ensembl_gene_id) %>% deframe()
 
   current_symbol_to_ensembl <- genes_with_ensembl %>%
     distinct(symbol, .keep_all = TRUE) %>%
-    { setNames(.$ensembl_gene_id, .$symbol) }
+    select(symbol, ensembl_gene_id) %>% deframe()
   alias_and_previous_symbol_to_ensembl <- genes_with_ensembl %>%
     transmute(ensembl_gene_id,
               alias = map(alias_symbol, split_pipe_delimited),
@@ -43,7 +43,7 @@ build_hgnc_bridge <- function(hgnc_complete_set_path) {
     unnest(historical_symbol) %>%
     filter(!historical_symbol %in% names(current_symbol_to_ensembl)) %>%
     distinct(historical_symbol, .keep_all = TRUE) %>%
-    { setNames(.$ensembl_gene_id, .$historical_symbol) }
+    select(historical_symbol, ensembl_gene_id) %>% deframe()
   symbol_to_ensembl <- c(current_symbol_to_ensembl, alias_and_previous_symbol_to_ensembl)
   # Case-insensitive symbol index (last resort; resolves e.g. "SGK494" -> "SgK494"/RSKR).
   symbol_to_ensembl_caseinsensitive <- symbol_to_ensembl
@@ -52,8 +52,9 @@ build_hgnc_bridge <- function(hgnc_complete_set_path) {
     symbol_to_ensembl_caseinsensitive[!duplicated(names(symbol_to_ensembl_caseinsensitive))]
 
   # Locus type per Ensembl ID, used to reject implausible hits.
-  ensembl_to_locus_type <- setNames(genes_with_ensembl$locus_type, genes_with_ensembl$ensembl_gene_id)
-  ensembl_to_locus_type <- ensembl_to_locus_type[!duplicated(names(ensembl_to_locus_type))]
+  ensembl_to_locus_type <- genes_with_ensembl %>%
+    distinct(ensembl_gene_id, .keep_all = TRUE) %>%
+    select(ensembl_gene_id, locus_type) %>% deframe()
   # A kinase is a protein product (or pseudogene), never an RNA gene. A stale source ID
   # can point at a locus since reassigned to an ncRNA (e.g. a 2002 Entrez ID now belonging
   # to an antisense RNA), so candidates on an "RNA, ..." locus are skipped.

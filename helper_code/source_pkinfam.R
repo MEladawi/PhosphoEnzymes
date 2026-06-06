@@ -13,15 +13,10 @@ load_pkinfam_kinome <- function(pkinfam_path, hgnc_bridge) {
 
   data_lines <- if (data_start_index < length(file_lines))
     file_lines[(data_start_index + 1):length(file_lines)] else character(0)
-  entry_rows <- list()
-  for (line in data_lines) {
-    if (str_detect(line, entry_pattern)) {
-      matched <- str_match(line, entry_pattern)
-      entry_rows[[length(entry_rows) + 1]] <- tibble(symbol = matched[2], uniprot_accession = matched[3])
-    }
-  }
+  matched <- str_match(data_lines, entry_pattern)   # non-entry lines yield NA rows, dropped below
 
-  resolved <- bind_rows(entry_rows) %>%
+  resolved <- tibble(symbol = matched[, 2], uniprot_accession = matched[, 3]) %>%
+    filter(!is.na(symbol)) %>%
     mutate(ensembl_gene_id = pmap_chr(list(uniprot_accession, symbol),
                                       ~ hgnc_bridge$resolve_to_ensembl(uniprot_accessions = ..1, source_symbols = ..2)))
   split_result <- split_mapped_and_unmapped(resolved, "pkinfam", id_column = "uniprot_accession")
