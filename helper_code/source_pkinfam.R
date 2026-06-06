@@ -5,11 +5,16 @@
 load_pkinfam_kinome <- function(pkinfam_path, hgnc_bridge) {
   file_lines <- read_lines(pkinfam_path, locale = locale(encoding = "latin1"))   # pkinfam is latin-1
   data_start_index <- grep("Swiss-Prot entries for protein kinases", file_lines)[1]
+  if (is.na(data_start_index))
+    stop("pkinfam: section marker 'Swiss-Prot entries for protein kinases' not found in ",
+         pkinfam_path, " (the source layout may have changed).")
   # A data line looks like: "AKT1   AKT1_HUMAN (P31749 )  AKT1_MOUSE (P31750)".
   entry_pattern <- "^(\\S+)\\s+\\S+_HUMAN\\s*\\(\\s*([A-Z0-9]+)\\s*\\)"          # symbol + human accession
 
+  data_lines <- if (data_start_index < length(file_lines))
+    file_lines[(data_start_index + 1):length(file_lines)] else character(0)
   entry_rows <- list()
-  for (line in file_lines[(data_start_index + 1):length(file_lines)]) {
+  for (line in data_lines) {
     if (str_detect(line, entry_pattern)) {
       matched <- str_match(line, entry_pattern)
       entry_rows[[length(entry_rows) + 1]] <- tibble(symbol = matched[2], uniprot_accession = matched[3])

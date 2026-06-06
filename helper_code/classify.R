@@ -48,7 +48,11 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
     has_protein_kinase_evidence <- in_protein_kinase_go || in_pkinfam || in_manning ||
                                    in_kinhub || has_protein_kinase_ec
 
-    if (!is.na(nonprotein_class) && !in_protein_kinase_go) {   # gate: non-protein wins only if not protein-GO
+    # Gate: a non-protein class wins only if the gene is NOT flagged a protein kinase by a
+    # reliable signal -- GO protein-kinase activity OR a protein-kinase EC subclass (2.7.10-14,
+    # which are never lipid). pkinfam/Manning/KinHub are deliberately NOT trusted here because
+    # they lump the PI3/PI4 (lipid+protein) family together.
+    if (!is.na(nonprotein_class) && !in_protein_kinase_go && !has_protein_kinase_ec) {
       kinase_type <- nonprotein_class; is_protein_kinase <- FALSE
     } else if (has_protein_kinase_evidence) {
       kinase_type <- "Protein kinase"; is_protein_kinase <- TRUE

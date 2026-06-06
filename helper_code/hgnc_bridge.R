@@ -4,10 +4,19 @@
 # that maps a source gene (by Entrez, UniProt, or symbol) to a base Ensembl gene ID.
 
 build_hgnc_bridge <- function(hgnc_complete_set_path) {
-  approved_genes <- read_tsv(hgnc_complete_set_path,
-                             col_types = cols(.default = col_character()),
-                             na = c("", "NA"), quote = "") %>%
-    filter(status == "Approved")
+  hgnc_complete_set <- read_tsv(hgnc_complete_set_path,
+                                col_types = cols(.default = col_character()),
+                                na = c("", "NA"), quote = "")
+  # Fail at this boundary with a clear message if the upstream schema changed, rather than
+  # erroring deep inside a transmute (the file is auto-refreshed, so columns can move/rename).
+  required_columns <- c("status", "ensembl_gene_id", "hgnc_id", "symbol", "name",
+                        "prev_symbol", "alias_symbol", "entrez_id", "uniprot_ids", "locus_type",
+                        "gene_group", "enzyme_id", "iuphar", "mane_select", "location")
+  missing_columns <- setdiff(required_columns, names(hgnc_complete_set))
+  if (length(missing_columns))
+    stop("HGNC complete set is missing expected column(s): ", paste(missing_columns, collapse = ", "),
+         ". The source schema may have changed; check ", hgnc_complete_set_path, ".")
+  approved_genes <- hgnc_complete_set %>% filter(status == "Approved")
   # Only rows that carry an Ensembl gene ID can be keyed.
   genes_with_ensembl <- approved_genes %>% filter(!is.na(ensembl_gene_id), ensembl_gene_id != "")
 

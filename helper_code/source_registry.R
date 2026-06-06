@@ -13,8 +13,9 @@ read_pkinfam_release <- function(file_path) {
   if (length(release_line)) str_squish(sub("^Release:", "", release_line[1])) else NA_character_
 }
 
-# Files without an internal version string are tracked by their file date.
-file_modification_date <- function(file_path) as.character(as.Date(file.mtime(file_path)))
+# Files without an internal version string are tracked by their file date (local time, so
+# the day boundary matches Sys.Date()).
+file_modification_date <- function(file_path) as.character(as.Date(file.mtime(file_path), tz = Sys.timezone()))
 
 # --- the UniProt KW-0418 REST query (reviewed human proteins, keyword "Kinase") ----
 uniprot_keyword_kinase_url <- paste0(
@@ -94,7 +95,8 @@ update_sources <- function(registry, data_in_dir, refresh = TRUE, force_refresh 
       next
     }
 
-    already_fetched_today <- file.exists(file_path) && as.Date(file.mtime(file_path)) >= Sys.Date()
+    already_fetched_today <- file.exists(file_path) &&
+      as.Date(file.mtime(file_path), tz = Sys.timezone()) >= Sys.Date()
     if (!refresh || (already_fetched_today && !force_refresh)) {
       message(sprintf("  [cached] %s", source_entry$local_filename))
       next
