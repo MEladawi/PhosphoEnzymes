@@ -50,13 +50,19 @@ but PRKCA/ATM/MTOR/PIK3CA as protein kinases. Non-protein typing priority is
 lipid → inositol-phosphate → carbohydrate → nucleotide → creatine, with an EC-subclass
 fallback.
 
-Taxonomy (`kinase_group` / `kinase_family` / `kinase_subfamily`) uses the actively-curated
-UniProt protein-family classification as the primary, up-to-date source for group and
-subfamily, with the Manning intermediate "family" tier (e.g. Akt, CDK, FGFR) taken from
-KinHub/kinase.com. Each field is filled UniProt → KinHub → kinase.com; the raw UniProt string
-is kept in `uniprot_protein_family`. (The classic Manning group/family/subfamily scheme is a
-fixed 2002 classification and is not separately versioned; UniProt is what keeps current
-kinases assigned to it.)
+Taxonomy is assigned per field, each "first non-blank" across the listed sources:
+
+- `kinase_group` — UniProt → KinHub → kinase.com. UniProt's value is the leading token of its
+  `protein_families` string (with `Tyr`→`TK`), accepted only if it is a real Manning group
+  (AGC/CAMK/CK1/CMGC/NEK/RGC/STE/TK/TKL/Other/Atypical); otherwise it is left blank for
+  KinHub/kinase.com to fill (non-protein kinases get no group).
+- `kinase_family` — KinHub → kinase.com only: the Manning short tier (Akt, CDK, FGFR …). The
+  verbose UniProt family string is **not** mixed into this column.
+- `kinase_subfamily` — UniProt → KinHub → kinase.com.
+- `uniprot_protein_family` — the raw UniProt `Protein families` string, kept verbatim.
+
+UniProt is the actively-curated, up-to-date source; KinHub (2017) and kinase.com (2002) are
+static, so they serve as fallbacks for the fixed Manning group/family/subfamily scheme.
 
 Identifier resolution is guarded against stale source IDs: a candidate gene that is an RNA
 locus, or whose HGNC symbol history (current + alias + previous) disagrees with the source

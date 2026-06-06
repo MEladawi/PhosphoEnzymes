@@ -43,7 +43,9 @@ build_kinase_taxonomy <- function(uniprot_taxonomy_table, kinhub_taxonomy_table,
 
   list(
     group     = coalesce_maps(column_map(uniprot, "group"),     column_map(kinhub, "group"),     column_map(manning, "group")),
-    family    = coalesce_maps(column_map(kinhub,  "family"),    column_map(manning, "family"),   column_map(uniprot, "family")),
+    # kinase_family stays in the Manning short-label vocabulary (Akt, CDK, ...); the verbose
+    # UniProt family string is NOT mixed in here -- it is kept separately in uniprot_protein_family.
+    family    = coalesce_maps(column_map(kinhub,  "family"),    column_map(manning, "family")),
     subfamily = coalesce_maps(column_map(uniprot, "subfamily"), column_map(kinhub, "subfamily"), column_map(manning, "subfamily")),
     uniprot_family_raw = column_map(uniprot, "uniprot_protein_family"))
 }
