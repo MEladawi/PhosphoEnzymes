@@ -8,7 +8,7 @@ an offline, reproducible rerun of the cached files.
 
 | Local file | Source | Auto-fetch URL |
 |---|---|---|
-| `hgnc_complete_set.txt` | HGNC complete set (identifier bridge) | https://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt |
+| `hgnc_complete_set.txt` | HGNC complete set (identifier bridge) | latest monthly archive via the `hgnc` package (`hgnc::download_hgnc_dataset(hgnc::latest_monthly_url())`) |
 | `pkinfam.txt` | UniProt pkinfam (curated protein kinome) | https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/docs/pkinfam.txt |
 | `go_mf_genesets_ensembl.gmt` | GO molecular-function gene sets, Ensembl-keyed (Bader Lab EM_Genesets) | https://download.baderlab.org/EM_Genesets/current_release/Human/ensembl/GO/Human_GO_mf_with_GO_iea_ensembl.gmt |
 | `kinase.com_manning_list.xls` | Manning human kinome (kinase.com, 2002) | https://raw.githubusercontent.com/IDG-Kinase/DarkKinaseTools/master/data-raw/dark_kinases/kinase.com_list.xls |

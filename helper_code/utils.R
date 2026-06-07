@@ -16,17 +16,23 @@
 
 # Split a pipe-delimited HGNC field into a trimmed character vector (drops blanks).
 split_pipe_delimited <- function(field_value) {
-  if (is.na(field_value) || field_value == "") return(character(0))
-  parts <- str_trim(str_split(field_value, fixed("|"))[[1]])
-  parts[parts != ""]
+  if (is.na(field_value) || field_value == "") {
+    character(0)
+  } else {
+    parts <- str_trim(str_split(field_value, fixed("|"))[[1]])
+    parts[parts != ""]
+  }
 }
 
 # Look up a value in a named vector; returns NA when the key is absent or blank.
 # Uses single-bracket indexing (one keyed lookup) rather than an `%in% names()` scan.
 lookup_in_named_vector <- function(named_vector, key) {
-  if (is.na(key) || key == "") return(NA_character_)
-  value <- unname(named_vector[key])
-  if (is.na(value)) NA_character_ else value
+  if (is.na(key) || key == "") {
+    NA_character_
+  } else {
+    value <- unname(named_vector[key])
+    if (is.na(value)) NA_character_ else value
+  }
 }
 
 # Split a resolved source table (must have `symbol` + `ensembl_gene_id` columns) into the

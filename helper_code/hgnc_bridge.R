@@ -95,16 +95,17 @@ build_hgnc_bridge <- function(hgnc_complete_set_path) {
     source_symbols <- source_symbols[!is.na(source_symbols) & source_symbols != ""]
     candidate_ensembl_ids <- c(
       lookup_in_named_vector(entrez_id_to_ensembl, entrez_id %||% NA_character_),
-      vapply(uniprot_accessions, function(accession) lookup_in_named_vector(uniprot_accession_to_ensembl, accession), character(1)),
-      vapply(source_symbols,     function(symbol)    lookup_in_named_vector(symbol_to_ensembl, symbol), character(1)),
-      vapply(source_symbols,     function(symbol)    lookup_in_named_vector(symbol_to_ensembl_caseinsensitive, toupper(symbol)), character(1)))
+      map_chr(uniprot_accessions, \(accession) lookup_in_named_vector(uniprot_accession_to_ensembl, accession)),
+      map_chr(source_symbols,     \(symbol)    lookup_in_named_vector(symbol_to_ensembl, symbol)),
+      map_chr(source_symbols,     \(symbol)    lookup_in_named_vector(symbol_to_ensembl_caseinsensitive, toupper(symbol))))
     candidate_ensembl_ids <- candidate_ensembl_ids[!is.na(candidate_ensembl_ids)]
 
-    for (candidate in candidate_ensembl_ids)
-      if (!candidate_is_rna_gene(candidate) && candidate_symbol_matches(candidate, source_symbols)) return(candidate)
-    for (candidate in candidate_ensembl_ids)
-      if (!candidate_is_rna_gene(candidate)) return(candidate)
-    NA_character_
+    # Prefer the first plausible hit (not an RNA gene AND symbol-consistent); otherwise the
+    # first non-RNA hit; otherwise nothing.
+    detect(candidate_ensembl_ids,
+           \(candidate) !candidate_is_rna_gene(candidate) && candidate_symbol_matches(candidate, source_symbols)) %||%
+      detect(candidate_ensembl_ids, \(candidate) !candidate_is_rna_gene(candidate)) %||%
+      NA_character_
   }
 
   # Per-Ensembl metadata (first HGNC row per Ensembl ID).

@@ -14,21 +14,23 @@ MANNING_GROUP_CODES <- c("AGC","CAMK","CK1","CMGC","NEK","RGC","STE","TK","TKL",
 #   "Protein kinase superfamily, AGC Ser/Thr protein kinase family, RAC subfamily"
 # into group ("AGC"), family ("AGC Ser/Thr protein kinase family"), subfamily ("RAC").
 parse_uniprot_protein_family <- function(families_string) {
-  blank <- list(group = NA_character_, family = NA_character_, subfamily = NA_character_)
-  if (is.na(families_string) || families_string == "") return(blank)
-  parts <- str_trim(str_split(families_string, ",")[[1]])
-  parts <- parts[parts != ""]
-  is_superfamily <- str_detect(parts, regex("superfamily$", ignore_case = TRUE))
-  is_subfamily   <- str_detect(parts, regex("subfamily$",   ignore_case = TRUE))
-  is_family      <- str_detect(parts, regex("family$",      ignore_case = TRUE)) & !is_superfamily & !is_subfamily
+  if (is.na(families_string) || families_string == "") {
+    list(group = NA_character_, family = NA_character_, subfamily = NA_character_)
+  } else {
+    parts <- str_trim(str_split(families_string, ",")[[1]])
+    parts <- parts[parts != ""]
+    is_superfamily <- str_detect(parts, regex("superfamily$", ignore_case = TRUE))
+    is_subfamily   <- str_detect(parts, regex("subfamily$",   ignore_case = TRUE))
+    is_family      <- str_detect(parts, regex("family$",      ignore_case = TRUE)) & !is_superfamily & !is_subfamily
 
-  family    <- if (any(is_family))    parts[is_family][1] else NA_character_
-  subfamily <- if (any(is_subfamily)) str_trim(str_remove(parts[is_subfamily][1],
-                                       regex("\\s*subfamily$", ignore_case = TRUE))) else NA_character_
-  group <- if (!is.na(family)) str_split(family, "\\s+")[[1]][1] else NA_character_  # leading token of the family
-  if (!is.na(group) && group == "Tyr") group <- "TK"                                # UniProt label -> Manning label
-  if (!is.na(group) && !(group %in% MANNING_GROUP_CODES)) group <- NA_character_     # only real Manning groups
-  list(group = group, family = family, subfamily = subfamily)
+    family    <- if (any(is_family))    parts[is_family][1] else NA_character_
+    subfamily <- if (any(is_subfamily)) str_trim(str_remove(parts[is_subfamily][1],
+                                         regex("\\s*subfamily$", ignore_case = TRUE))) else NA_character_
+    group <- if (!is.na(family)) str_split(family, "\\s+")[[1]][1] else NA_character_  # leading token of the family
+    if (!is.na(group) && group == "Tyr") group <- "TK"                                # UniProt label -> Manning label
+    if (!is.na(group) && !(group %in% MANNING_GROUP_CODES)) group <- NA_character_     # only real Manning groups
+    list(group = group, family = family, subfamily = subfamily)
+  }
 }
 
 load_uniprot_keyword_kinome <- function(uniprot_tsv_path, hgnc_bridge) {

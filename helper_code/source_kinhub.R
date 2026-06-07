@@ -30,9 +30,12 @@ build_kinase_taxonomy <- function(uniprot_taxonomy_table, kinhub_taxonomy_table,
 
   # Named (ensembl -> value) vector for one column, with blanks dropped.
   column_map <- function(taxonomy_table, column_name) {
-    if (!column_name %in% names(taxonomy_table)) return(setNames(character(0), character(0)))
-    values <- setNames(taxonomy_table[[column_name]], taxonomy_table$ensembl_gene_id)
-    values[!is.na(values) & values != ""]
+    if (!column_name %in% names(taxonomy_table)) {
+      setNames(character(0), character(0))
+    } else {
+      values <- setNames(taxonomy_table[[column_name]], taxonomy_table$ensembl_gene_id)
+      values[!is.na(values) & values != ""]
+    }
   }
   # First non-blank value per gene across the maps, in the order given (highest priority first).
   coalesce_maps <- function(...) {

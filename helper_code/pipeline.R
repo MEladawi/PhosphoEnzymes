@@ -5,11 +5,16 @@
 # messaging lives here and in the helpers, keeping build_kinases.R a one-line call.
 
 # Install any missing packages, then attach the ones the pipeline needs.
+# `attached` are used directly (data wrangling, I/O, workbook). `installed_only` are used
+# via `::` by the HGNC source fetch (hgnc / its dependency lubridate) and are deliberately
+# NOT attached -- attaching lubridate would mask base intersect()/union()/setdiff().
 ensure_packages <- function() {
-  required <- c("readr","dplyr","tidyr","stringr","purrr","tibble","rvest","readxl","openxlsx")
-  missing  <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
+  attached      <- c("readr","dplyr","tidyr","stringr","purrr","tibble","rvest","readxl","openxlsx")
+  installed_only <- c("hgnc","lubridate")
+  missing <- c(attached, installed_only)
+  missing <- missing[!vapply(missing, requireNamespace, logical(1), quietly = TRUE)]
   if (length(missing)) install.packages(missing, repos = "https://cloud.r-project.org")
-  suppressPackageStartupMessages(invisible(lapply(required, library, character.only = TRUE)))
+  suppressPackageStartupMessages(invisible(lapply(attached, library, character.only = TRUE)))
 }
 
 #' Build the comprehensive human kinase reference table.

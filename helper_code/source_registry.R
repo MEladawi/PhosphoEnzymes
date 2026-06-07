@@ -28,8 +28,16 @@ SOURCE_REGISTRY <- list(
   hgnc_complete_set = list(
     description    = "HGNC complete set (identifier bridge)",
     local_filename = "hgnc_complete_set.txt",
-    download_url   = "https://ftp.ebi.ac.uk/pub/databases/genenames/hgnc/tsv/hgnc_complete_set.txt",
+    download_url   = "https://www.genenames.org (latest monthly via the hgnc package)",
     auto_updatable = TRUE,
+    # HGNC's plain download URL is no longer stable (the archive filename changes each
+    # release); the hgnc package resolves the latest monthly archive for us.
+    fetch          = function(destination) {
+      for (pkg in c("lubridate", "hgnc"))
+        if (!requireNamespace(pkg, quietly = TRUE)) install.packages(pkg, repos = "https://cloud.r-project.org")
+      hgnc::download_hgnc_dataset(url = hgnc::latest_monthly_url(),
+                                  path = dirname(destination), filename = basename(destination))
+    },
     read_version   = function(file_path) paste("HGNC monthly, file dated", file_modification_date(file_path))),
 
   uniprot_pkinfam = list(
@@ -103,28 +111,45 @@ update_sources <- function(registry, data_in_dir, refresh = TRUE, force_refresh 
     }
 
     message(sprintf("  [fetch ] %s", source_entry$local_filename))
-    tryCatch(
-      utils::download.file(source_entry$download_url, file_path, quiet = TRUE, mode = "wb"),
-      error = function(e) {
-        if (file.exists(file_path)) message("           download failed; keeping cached copy")
-        else stop(sprintf("Could not download %s and no cached copy exists: %s",
-                          source_entry$local_filename, conditionMessage(e)))
-      })
+    fetch_into <- if (is.function(source_entry$fetch)) {
+      source_entry$fetch
+    } else {
+      function(destination) utils::download.file(source_entry$download_url, destination,
+                                                 quiet = TRUE, mode = "wb")
+    }
+    # Fetch into a temporary file in the same folder and only replace the cached copy on
+    # success, so a failed refresh can never destroy the existing file.
+    temp_path <- tempfile(pattern = paste0(source_key, "_"), tmpdir = data_in_dir)
+    fetched_ok <- tryCatch({
+      fetch_into(temp_path)
+      file.exists(temp_path) && file.info(temp_path)$size > 0L
+    }, error = function(e) {
+      message("           fetch failed: ", conditionMessage(e)); FALSE
+    })
+
+    if (fetched_ok) {
+      file.rename(temp_path, file_path)                    # atomic replace (same filesystem)
+    } else {
+      unlink(temp_path)
+      if (file.exists(file_path)) message("           keeping cached copy")
+      else stop(sprintf("Could not fetch %s and no cached copy exists.", source_entry$local_filename))
+    }
   }
 }
 
 # Record what was actually used this run (source, file, version, url, fetch date).
 build_source_manifest <- function(registry, data_in_dir) {
-  map_dfr(names(registry), function(source_key) {
-    source_entry <- registry[[source_key]]
-    file_path    <- file.path(data_in_dir, source_entry$local_filename)
-    present      <- file.exists(file_path)
-    tibble(
-      source  = source_entry$description,
-      file    = source_entry$local_filename,
-      version = if (present) source_entry$read_version(file_path) %||% NA_character_ else "MISSING",
-      fetched = if (present) file_modification_date(file_path) else NA_character_,
-      url     = if (is.na(source_entry$download_url)) "manual download (registration required)"
-                else source_entry$download_url)
-  })
+  names(registry) |>
+    map(function(source_key) {
+      source_entry <- registry[[source_key]]
+      file_path    <- file.path(data_in_dir, source_entry$local_filename)
+      present      <- file.exists(file_path)
+      tibble(
+        source  = source_entry$description,
+        file    = source_entry$local_filename,
+        version = if (present) source_entry$read_version(file_path) %||% NA_character_ else "MISSING",
+        fetched = if (present) file_modification_date(file_path) else NA_character_,
+        url     = source_entry$download_url)
+    }) |>
+    list_rbind()
 }

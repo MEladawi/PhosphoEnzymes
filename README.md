@@ -71,8 +71,9 @@ symbol, is rejected in favour of a consistent hit.
 ## Requirements
 
 - R (≥ 4.1)
-- Packages: `readr dplyr tidyr stringr purrr tibble rvest readxl openxlsx`
-  (the script installs any that are missing).
+- Packages: `readr dplyr tidyr stringr purrr tibble rvest readxl openxlsx`, plus
+  `hgnc` (and its dependency `lubridate`) used to fetch the latest HGNC release.
+  The script installs any that are missing.
 - Internet access on first run (or whenever refreshing sources).
 
 ## Usage
