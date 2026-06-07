@@ -20,9 +20,12 @@ ensure_packages <- function() {
 # Single source of truth for the build version: the `version:` field of CITATION.cff. Keeping
 # the tag here means a citation and the recorded build version cannot disagree.
 read_pipeline_version <- function(citation_path = "CITATION.cff") {
-  if (!file.exists(citation_path)) return("unversioned")
-  version_line <- str_subset(readLines(citation_path, warn = FALSE), "^version:")
-  if (length(version_line)) str_squish(str_remove(version_line[1], "^version:")) else "unversioned"
+  if (!file.exists(citation_path)) {
+    "unversioned"
+  } else {
+    version_line <- str_subset(readLines(citation_path, warn = FALSE), "^version:")
+    if (length(version_line)) str_squish(str_remove(version_line[1], "^version:")) else "unversioned"
+  }
 }
 
 #' Build the comprehensive human kinase reference table.

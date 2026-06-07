@@ -55,8 +55,9 @@ go_read_version <- function(variant_label) {
 HGNC_SOURCE_URL_SIDECAR <- "hgnc_source_url.txt"
 make_hgnc_fetch <- function(pinned_archive_url = NULL) {
   function(destination) {
-    for (pkg in c("lubridate", "hgnc"))
-      if (!requireNamespace(pkg, quietly = TRUE)) install.packages(pkg, repos = "https://cloud.r-project.org")
+    walk(c("lubridate", "hgnc"),
+         \(pkg) if (!requireNamespace(pkg, quietly = TRUE))
+           install.packages(pkg, repos = "https://cloud.r-project.org"))
     resolved_url <- pinned_archive_url %||% hgnc::latest_monthly_url()
     hgnc::download_hgnc_dataset(url = resolved_url,
                                 path = dirname(destination), filename = basename(destination))
@@ -201,7 +202,7 @@ update_sources <- function(registry, data_in_dir, refresh = TRUE, force_refresh 
 # Record what was actually used this run (source, file, version, url, fetch date).
 build_source_manifest <- function(registry, data_in_dir) {
   names(registry) |>
-    map(function(source_key) {
+    map(\(source_key) {
       source_entry <- registry[[source_key]]
       file_path    <- file.path(data_in_dir, source_entry$local_filename)
       present      <- file.exists(file_path)

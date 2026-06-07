@@ -24,12 +24,13 @@ build_master_schema_yaml <- function(kinases_table, pipeline_version = "unversio
     else if (is.numeric(column)) "double"
     else "character"
   }
-  column_blocks <- map(names(kinases_table), function(column_name) {
+  column_blocks <- map(names(kinases_table), \(column_name) {
     column <- kinases_table[[column_name]]
     block  <- c(sprintf("  - name: %s", column_name),
                 sprintf("    type: %s", r_type(column)))
     if (is.logical(column)) {
-      c(block, "    enum: [false, true]")
+      # readr::write_csv emits logicals as TRUE/FALSE, so the enum matches the CSV text exactly.
+      c(block, '    enum: ["FALSE", "TRUE"]')
     } else if (column_name %in% enum_columns) {
       allowed <- sort(unique(column[!is.na(column) & column != ""]))
       c(block, sprintf("    enum: [%s]", paste(sprintf('"%s"', allowed), collapse = ", ")))
@@ -223,13 +224,14 @@ qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_
          holds     = function(rows) all(!rows$protein_kinase | rows$dual_protein_and_nonprotein)))
 
   emit("\nClass-level invariants:\n")
-  for (invariant in class_invariants) {
+  invariant_results <- map_lgl(class_invariants, \(invariant) {
     family_rows <- kinases_table[invariant$in_family, ]
     passed <- nrow(family_rows) > 0 && invariant$holds(family_rows)
-    all_passed <- all_passed && passed
     emit(sprintf("  [%s] %-58s (n=%d)\n", if (passed) "PASS" else "FAIL",
                  invariant$label, nrow(family_rows)))
-  }
+    passed
+  })
+  all_passed <- all_passed && all(invariant_results)
 
   emit(sprintf("\nSanity check: %s\n", if (all_passed) "ALL PASS" else "FAILURES ABOVE"))
   if (go_canary_failed)
