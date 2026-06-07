@@ -15,8 +15,8 @@ load_pkinfam_kinome <- function(pkinfam_path, hgnc_bridge) {
     file_lines[(data_start_index + 1):length(file_lines)] else character(0)
   matched <- str_match(data_lines, entry_pattern)   # non-entry lines yield NA rows, dropped below
 
-  resolved <- tibble(symbol = matched[, 2], uniprot_accession = matched[, 3]) %>%
-    filter(!is.na(symbol)) %>%
+  resolved <- tibble(symbol = matched[, 2], uniprot_accession = matched[, 3]) |>
+    filter(!is.na(symbol)) |>
     mutate(ensembl_gene_id = pmap_chr(list(uniprot_accession, symbol),
                                       ~ hgnc_bridge$resolve_to_ensembl(uniprot_accessions = ..1, source_symbols = ..2)))
   split_result <- split_mapped_and_unmapped(resolved, "pkinfam", id_column = "uniprot_accession")

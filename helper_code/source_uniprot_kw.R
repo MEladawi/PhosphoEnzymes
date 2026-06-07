@@ -32,15 +32,15 @@ parse_uniprot_protein_family <- function(families_string) {
 }
 
 load_uniprot_keyword_kinome <- function(uniprot_tsv_path, hgnc_bridge) {
-  resolved <- read_tsv(uniprot_tsv_path, col_types = cols(.default = col_character())) %>%
+  resolved <- read_tsv(uniprot_tsv_path, col_types = cols(.default = col_character())) |>
     transmute(uniprot_accession = Entry, symbol = `Gene Names (primary)`,
-              protein_families = `Protein families`) %>%
+              protein_families = `Protein families`) |>
     mutate(ensembl_gene_id = pmap_chr(list(uniprot_accession, symbol),
                                       ~ hgnc_bridge$resolve_to_ensembl(uniprot_accessions = ..1, source_symbols = ..2)))
   split_result <- split_mapped_and_unmapped(resolved, "UniProt_KW0418", id_column = "uniprot_accession")
 
   parsed <- map(split_result$mapped$protein_families, parse_uniprot_protein_family)
-  taxonomy_table <- split_result$mapped %>%
+  taxonomy_table <- split_result$mapped |>
     transmute(ensembl_gene_id,
               group     = map_chr(parsed, "group"),
               family    = map_chr(parsed, "family"),
