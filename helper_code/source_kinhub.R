@@ -4,11 +4,11 @@
 # UniProt accession, then HGNC symbol.
 
 load_kinhub_kinome <- function(kinhub_html_path, hgnc_bridge) {
-  kinhub_table <- read_html(kinhub_html_path) %>% html_element("table") %>% html_table()
+  kinhub_table <- read_html(kinhub_html_path) |> html_element("table") |> html_table()
   names(kinhub_table) <- str_squish(names(kinhub_table))           # normalise header whitespace/nbsp
-  resolved <- kinhub_table %>%
+  resolved <- kinhub_table |>
     transmute(symbol = `HGNC Name`, uniprot_accession = UniprotID, manning_name = `Manning Name`,
-              group = Group, family = Family, subfamily = SubFamily) %>%
+              group = Group, family = Family, subfamily = SubFamily) |>
     mutate(across(everything(), ~ na_if(str_trim(.x), "")),
            ensembl_gene_id = pmap_chr(list(uniprot_accession, symbol),
                                       ~ hgnc_bridge$resolve_to_ensembl(uniprot_accessions = ..1, source_symbols = ..2)))
@@ -23,7 +23,7 @@ load_kinhub_kinome <- function(kinhub_html_path, hgnc_bridge) {
 # intermediate "family" tier is taken from KinHub/kinase.com (UniProt has no equivalent
 # tier). Any field is filled by the first source that has a value for that gene.
 build_kinase_taxonomy <- function(uniprot_taxonomy_table, kinhub_taxonomy_table, manning_taxonomy_table) {
-  first_row_per_gene <- function(taxonomy_table) taxonomy_table %>% distinct(ensembl_gene_id, .keep_all = TRUE)
+  first_row_per_gene <- function(taxonomy_table) taxonomy_table |> distinct(ensembl_gene_id, .keep_all = TRUE)
   uniprot <- first_row_per_gene(uniprot_taxonomy_table)
   kinhub  <- first_row_per_gene(kinhub_taxonomy_table)
   manning <- first_row_per_gene(manning_taxonomy_table)

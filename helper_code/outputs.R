@@ -26,7 +26,7 @@ write_outputs <- function(kinases_table, unmapped_table, output_dir, source_mani
   write_csv(distinct(unmapped_table), file.path(output_dir, "kinases_unmapped.csv"))
   write_tsv(source_manifest, file.path(output_dir, "source_versions.tsv"))
 
-  type_counts   <- kinases_table %>% count(kinase_type, sort = TRUE)
+  type_counts   <- kinases_table |> count(kinase_type, sort = TRUE)
   source_counts <- count_genes_per_source(kinases_table)
 
   workbook <- createWorkbook()

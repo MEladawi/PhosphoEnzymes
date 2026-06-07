@@ -16,34 +16,34 @@ build_hgnc_bridge <- function(hgnc_complete_set_path) {
   if (length(missing_columns))
     stop("HGNC complete set is missing expected column(s): ", paste(missing_columns, collapse = ", "),
          ". The source schema may have changed; check ", hgnc_complete_set_path, ".")
-  approved_genes <- hgnc_complete_set %>% filter(status == "Approved")
+  approved_genes <- hgnc_complete_set |> filter(status == "Approved")
   # Only rows that carry an Ensembl gene ID can be keyed.
-  genes_with_ensembl <- approved_genes %>% filter(!is.na(ensembl_gene_id), ensembl_gene_id != "")
+  genes_with_ensembl <- approved_genes |> filter(!is.na(ensembl_gene_id), ensembl_gene_id != "")
 
   # KEY -> ensembl maps (named vectors used as hash maps), first occurrence of each key wins.
-  entrez_id_to_ensembl <- genes_with_ensembl %>%
-    filter(!is.na(entrez_id), entrez_id != "") %>%
-    distinct(entrez_id, .keep_all = TRUE) %>%
-    select(entrez_id, ensembl_gene_id) %>% deframe()
+  entrez_id_to_ensembl <- genes_with_ensembl |>
+    filter(!is.na(entrez_id), entrez_id != "") |>
+    distinct(entrez_id, .keep_all = TRUE) |>
+    select(entrez_id, ensembl_gene_id) |> deframe()
 
-  uniprot_accession_to_ensembl <- genes_with_ensembl %>%
-    transmute(ensembl_gene_id, uniprot_accession = map(uniprot_ids, split_pipe_delimited)) %>%
-    unnest(uniprot_accession) %>%
-    distinct(uniprot_accession, .keep_all = TRUE) %>%
-    select(uniprot_accession, ensembl_gene_id) %>% deframe()
+  uniprot_accession_to_ensembl <- genes_with_ensembl |>
+    transmute(ensembl_gene_id, uniprot_accession = map(uniprot_ids, split_pipe_delimited)) |>
+    unnest(uniprot_accession) |>
+    distinct(uniprot_accession, .keep_all = TRUE) |>
+    select(uniprot_accession, ensembl_gene_id) |> deframe()
 
-  current_symbol_to_ensembl <- genes_with_ensembl %>%
-    distinct(symbol, .keep_all = TRUE) %>%
-    select(symbol, ensembl_gene_id) %>% deframe()
-  alias_and_previous_symbol_to_ensembl <- genes_with_ensembl %>%
+  current_symbol_to_ensembl <- genes_with_ensembl |>
+    distinct(symbol, .keep_all = TRUE) |>
+    select(symbol, ensembl_gene_id) |> deframe()
+  alias_and_previous_symbol_to_ensembl <- genes_with_ensembl |>
     transmute(ensembl_gene_id,
               alias = map(alias_symbol, split_pipe_delimited),
-              previous = map(prev_symbol, split_pipe_delimited)) %>%
-    pivot_longer(c(alias, previous), values_to = "historical_symbol") %>%
-    unnest(historical_symbol) %>%
-    filter(!historical_symbol %in% names(current_symbol_to_ensembl)) %>%
-    distinct(historical_symbol, .keep_all = TRUE) %>%
-    select(historical_symbol, ensembl_gene_id) %>% deframe()
+              previous = map(prev_symbol, split_pipe_delimited)) |>
+    pivot_longer(c(alias, previous), values_to = "historical_symbol") |>
+    unnest(historical_symbol) |>
+    filter(!historical_symbol %in% names(current_symbol_to_ensembl)) |>
+    distinct(historical_symbol, .keep_all = TRUE) |>
+    select(historical_symbol, ensembl_gene_id) |> deframe()
   symbol_to_ensembl <- c(current_symbol_to_ensembl, alias_and_previous_symbol_to_ensembl)
   # Case-insensitive symbol index (last resort; resolves e.g. "SGK494" -> "SgK494"/RSKR).
   symbol_to_ensembl_caseinsensitive <- symbol_to_ensembl
@@ -52,9 +52,9 @@ build_hgnc_bridge <- function(hgnc_complete_set_path) {
     symbol_to_ensembl_caseinsensitive[!duplicated(names(symbol_to_ensembl_caseinsensitive))]
 
   # Locus type per Ensembl ID, used to reject implausible hits.
-  ensembl_to_locus_type <- genes_with_ensembl %>%
-    distinct(ensembl_gene_id, .keep_all = TRUE) %>%
-    select(ensembl_gene_id, locus_type) %>% deframe()
+  ensembl_to_locus_type <- genes_with_ensembl |>
+    distinct(ensembl_gene_id, .keep_all = TRUE) |>
+    select(ensembl_gene_id, locus_type) |> deframe()
   # A kinase is a protein product (or pseudogene), never an RNA gene. A stale source ID
   # can point at a locus since reassigned to an ncRNA (e.g. a 2002 Entrez ID now belonging
   # to an antisense RNA), so candidates on an "RNA, ..." locus are skipped.
@@ -66,20 +66,23 @@ build_hgnc_bridge <- function(hgnc_complete_set_path) {
   # Every name a gene has ever carried (current + alias + previous), upper-cased. HGNC's
   # alias_symbol/prev_symbol ARE the symbol history, so this lets us compare a source's
   # (possibly outdated) symbol against every name the gene has had.
-  symbol_history_long <- genes_with_ensembl %>%
+  symbol_history_long <- genes_with_ensembl |>
     transmute(ensembl_gene_id,
               historical_symbol = pmap(list(symbol, alias_symbol, prev_symbol),
                 function(current, aliases, previous)
-                  toupper(c(current, split_pipe_delimited(aliases), split_pipe_delimited(previous))))) %>%
-    unnest(historical_symbol) %>% distinct(ensembl_gene_id, historical_symbol)
+                  toupper(c(current, split_pipe_delimited(aliases), split_pipe_delimited(previous))))) |>
+    unnest(historical_symbol) |> distinct(ensembl_gene_id, historical_symbol)
   ensembl_to_symbol_history <- split(symbol_history_long$historical_symbol,
                                      symbol_history_long$ensembl_gene_id)
   # Does a candidate gene carry any of the source symbols (now or historically)?
   # No source symbol -> cannot disprove, treated as agreement.
   candidate_symbol_matches <- function(candidate_ensembl, source_symbols) {
-    if (length(source_symbols) == 0) return(TRUE)
-    known_symbols <- ensembl_to_symbol_history[[candidate_ensembl]]
-    !is.null(known_symbols) && any(toupper(source_symbols) %in% known_symbols)
+    if (length(source_symbols) == 0) {
+      TRUE
+    } else {
+      known_symbols <- ensembl_to_symbol_history[[candidate_ensembl]]
+      !is.null(known_symbols) && any(toupper(source_symbols) %in% known_symbols)
+    }
   }
 
   # Resolve by Entrez, then UniProt, then symbol/alias/previous (exact, then case-insensitive).
@@ -105,8 +108,8 @@ build_hgnc_bridge <- function(hgnc_complete_set_path) {
   }
 
   # Per-Ensembl metadata (first HGNC row per Ensembl ID).
-  gene_metadata <- genes_with_ensembl %>%
-    distinct(ensembl_gene_id, .keep_all = TRUE) %>%
+  gene_metadata <- genes_with_ensembl |>
+    distinct(ensembl_gene_id, .keep_all = TRUE) |>
     transmute(ensembl_gene_id, hgnc_id, symbol, name, prev_symbol, alias_symbol,
               entrez_id, uniprot_ids, locus_type, gene_group, enzyme_id,
               iuphar, mane_select, location)

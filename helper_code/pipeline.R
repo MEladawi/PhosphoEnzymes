@@ -58,8 +58,8 @@ build_kinase_list <- function(refresh_data = TRUE,
       ec              = ec_source$ensembl_ids,
       uniprot_keyword = uniprot_kw_source$ensembl_ids,
       idg_dark        = idg_source$ensembl_ids)
-    universe_ensembl_ids <- Reduce(union, membership) %>%
-      intersect(hgnc_bridge$gene_metadata$ensembl_gene_id) %>% sort()
+    universe_ensembl_ids <- Reduce(union, membership) |>
+      intersect(hgnc_bridge$gene_metadata$ensembl_gene_id) |> sort()
     message(sprintf("UNIVERSE: %d genes", length(universe_ensembl_ids)))
 
     kinase_taxonomy  <- build_kinase_taxonomy(uniprot_kw_source$taxonomy_table,

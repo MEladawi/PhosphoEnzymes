@@ -15,12 +15,12 @@ load_ec_kinome <- function(gene_metadata) {
     })))
   }
 
-  ec_table <- gene_metadata %>% mutate(
+  ec_table <- gene_metadata |> mutate(
     ec_subclasses          = map(enzyme_id, ec_subclasses_of),
     matched_kinase_subclasses = map(ec_subclasses, ~ intersect(.x, KINASE_EC_SUBCLASSES)),
     is_ec_kinase           = map_lgl(matched_kinase_subclasses, ~ length(.x) > 0),
     is_protein_kinase_ec   = map_lgl(ec_subclasses, ~ any(.x %in% PROTEIN_KINASE_EC_SUBCLASSES)))
 
-  list(ensembl_ids = ec_table %>% filter(is_ec_kinase) %>% pull(ensembl_gene_id),
+  list(ensembl_ids = ec_table |> filter(is_ec_kinase) |> pull(ensembl_gene_id),
        ec_table    = ec_table)
 }

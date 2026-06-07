@@ -5,9 +5,13 @@
 # Coalesce to a usable scalar: treat NULL / empty / NA / "" as missing. Length>1 values are
 # returned as-is (the NA/"" emptiness test only applies to a single scalar).
 `%||%` <- function(value, fallback) {
-  if (is.null(value) || length(value) == 0) return(fallback)
-  if (length(value) == 1 && (is.na(value) || value == "")) return(fallback)
-  value
+  if (is.null(value) || length(value) == 0) {
+    fallback
+  } else if (length(value) == 1 && (is.na(value) || value == "")) {
+    fallback
+  } else {
+    value
+  }
 }
 
 # Split a pipe-delimited HGNC field into a trimmed character vector (drops blanks).
