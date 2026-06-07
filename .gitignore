@@ -8,8 +8,8 @@ data_in/*
 # to keep the build reproducible for fresh clones.
 !data_in/kinhub_kinases.html
 
-# macOS / R artifacts
-.DS_Store
-.Rhistory
-.RData
-.Rproj.user/
+# Ignore everything starting with a dot (.DS_Store, .Rhistory, .RData, .Rproj.user/, 
+# etc.). Keep the repo's own git meta files.
+.*
+!.gitignore
+!.gitattributes
