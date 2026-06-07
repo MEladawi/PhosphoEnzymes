@@ -17,6 +17,14 @@ ensure_packages <- function() {
   suppressPackageStartupMessages(invisible(lapply(attached, library, character.only = TRUE)))
 }
 
+# Single source of truth for the build version: the `version:` field of CITATION.cff. Keeping
+# the tag here means a citation and the recorded build version cannot disagree.
+read_pipeline_version <- function(citation_path = "CITATION.cff") {
+  if (!file.exists(citation_path)) return("unversioned")
+  version_line <- str_subset(readLines(citation_path, warn = FALSE), "^version:")
+  if (length(version_line)) str_squish(str_remove(version_line[1], "^version:")) else "unversioned"
+}
+
 #' Build the comprehensive human kinase reference table.
 #'
 #' @param refresh_data  TRUE re-fetches auto-updatable sources (at most once/day);
@@ -25,23 +33,37 @@ ensure_packages <- function() {
 #' @param output_dir    Folder for the generated outputs (created if needed).
 #' @param write_files   TRUE writes the CSV/XLSX/list/manifest files; FALSE builds in memory only.
 #' @param quiet         TRUE suppresses progress messages and the QC printout.
+#' @param go_include_iea TRUE (default) uses the IEA-inclusive GO MF GMT; FALSE uses the
+#'                      no-IEA (manual/experimental-only) variant. The choice is recorded in
+#'                      the manifest.
+#' @param hgnc_archive_url Optional exact HGNC monthly-archive URL to pin the identifier
+#'                      bridge to a specific release; NULL (default) fetches the latest monthly
+#'                      and records the resolved archive URL in the manifest.
 #' @return (invisibly) a list with: `kinases` (the table), `unmapped`, `manifest`
 #'         (source versions), and `sanity_passed` (TRUE if all QC sanity genes passed).
-build_kinase_list <- function(refresh_data = TRUE,
-                              data_in_dir  = "data_in",
-                              output_dir   = "data_out",
-                              write_files  = TRUE,
-                              quiet        = FALSE) {
+build_kinase_list <- function(refresh_data    = TRUE,
+                              data_in_dir     = "data_in",
+                              output_dir      = "data_out",
+                              write_files     = TRUE,
+                              quiet           = FALSE,
+                              go_include_iea  = TRUE,
+                              hgnc_archive_url = NULL) {
 
   run_pipeline <- function() {
     ensure_packages()
     dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
-    build_date <- Sys.Date()
+    build_date       <- Sys.Date()
+    pipeline_version <- read_pipeline_version()
+
+    # Finalise the source registry for this run: GO IEA variant + optional HGNC pin.
+    registry <- configure_registry(SOURCE_REGISTRY,
+                                   go_include_iea   = go_include_iea,
+                                   hgnc_archive_url = hgnc_archive_url)
 
     message("Checking and refreshing source files ...")
-    update_sources(SOURCE_REGISTRY, data_in_dir, refresh = refresh_data)
-    source_manifest <- build_source_manifest(SOURCE_REGISTRY, data_in_dir)
-    path_for <- function(source_key) source_file_path(source_key, data_in_dir)
+    update_sources(registry, data_in_dir, refresh = refresh_data)
+    source_manifest <- build_source_manifest(registry, data_in_dir)
+    path_for <- function(source_key) source_file_path(source_key, data_in_dir, registry)
 
     message("Reading HGNC complete set ...")
     hgnc_bridge <- build_hgnc_bridge(path_for("hgnc_complete_set"))
@@ -63,7 +85,7 @@ build_kinase_list <- function(refresh_data = TRUE,
       ec              = ec_source$ensembl_ids,
       uniprot_keyword = uniprot_kw_source$ensembl_ids,
       idg_dark        = idg_source$ensembl_ids)
-    universe_ensembl_ids <- Reduce(union, membership) |>
+    universe_ensembl_ids <- reduce(membership, union) |>
       intersect(hgnc_bridge$gene_metadata$ensembl_gene_id) |> sort()
     message(sprintf("UNIVERSE: %d genes", length(universe_ensembl_ids)))
 
@@ -79,9 +101,11 @@ build_kinase_list <- function(refresh_data = TRUE,
 
     if (write_files) {
       message("Writing outputs to ", output_dir, "/ ...")
-      write_outputs(kinases_table, unmapped_records, output_dir, source_manifest, build_date)
+      write_outputs(kinases_table, unmapped_records, output_dir, source_manifest,
+                    build_date, pipeline_version)
     }
-    sanity_passed <- qc_report(kinases_table, unmapped_records, verbose = !quiet)
+    sanity_passed <- qc_report(kinases_table, unmapped_records, verbose = !quiet,
+                               go_protein_kinase_n = length(go_sets$protein_kinase_activity))
 
     invisible(list(kinases       = kinases_table,
                    unmapped      = unmapped_records,

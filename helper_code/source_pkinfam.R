@@ -4,7 +4,7 @@
 
 load_pkinfam_kinome <- function(pkinfam_path, hgnc_bridge) {
   file_lines <- read_lines(pkinfam_path, locale = locale(encoding = "latin1"))   # pkinfam is latin-1
-  data_start_index <- grep("Swiss-Prot entries for protein kinases", file_lines)[1]
+  data_start_index <- str_which(file_lines, fixed("Swiss-Prot entries for protein kinases"))[1]
   if (is.na(data_start_index))
     stop("pkinfam: section marker 'Swiss-Prot entries for protein kinases' not found in ",
          pkinfam_path, " (the source layout may have changed).")

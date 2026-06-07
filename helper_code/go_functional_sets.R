@@ -23,10 +23,10 @@ load_go_functional_sets <- function(go_gmt_path) {
     missing <- setdiff(go_accessions, present)
     if (length(missing))
       message("    [GO] not in this release, skipped: ", paste(missing, collapse = ", "))
-    unique(unlist(ensembl_ids_by_go_accession[present], use.names = FALSE))
+    ensembl_ids_by_go_accession[present] |> list_c() |> unique()
   }
 
-  list(
+  go_sets <- list(
     kinase_activity_umbrella = ensembl_ids_for_go_accessions("GO:0016301"),  # KINASE ACTIVITY
     protein_kinase_activity  = ensembl_ids_for_go_accessions("GO:0004672"),  # PROTEIN KINASE ACTIVITY
     lipid_kinase = ensembl_ids_for_go_accessions(c(
@@ -58,4 +58,34 @@ load_go_functional_sets <- function(go_gmt_path) {
       "GO:0004385",   # GMP kinase activity
       "GO:0004017")), # AMP kinase activity
     creatine_kinase = ensembl_ids_for_go_accessions("GO:0004111"))  # creatine kinase activity
+
+  assert_protein_kinase_set_is_propagated(go_sets$protein_kinase_activity)
+  go_sets
+}
+
+# The whole functional gate rests on GO:0004672 (protein kinase activity) being
+# ANCESTOR-PROPAGATED: the set must contain every gene annotated to any descendant term
+# (Tyr / Ser-Thr / His ... kinase activity), not just genes annotated directly to the parent.
+# A direct-only GMT would list only a handful of genes here and silently break the gate, so we
+# fail the build loudly instead. Canaries are kinases annotated only to CHILD terms; their
+# presence in GO:0004672 proves propagation. (Ensembl IDs are pinned with comments; if a future
+# Ensembl release retires one, update it here.)
+GO_PROTEIN_KINASE_CANARIES <- c(
+  EGFR  = "ENSG00000146648",   # receptor tyrosine kinase  (child: GO:0004714)
+  PRKCA = "ENSG00000154229",   # Ser/Thr protein kinase    (child: GO:0004674)
+  NME1  = "ENSG00000239672")   # protein-histidine kinase  (child: GO:0004673)
+assert_protein_kinase_set_is_propagated <- function(protein_kinase_members) {
+  member_count <- length(protein_kinase_members)
+  if (member_count < 300)
+    stop("GO:0004672 (protein kinase activity) has only ", member_count, " members; expected ",
+         "~500+. The GO MF GMT appears to carry DIRECT annotations only (not ancestor-",
+         "propagated), which silently breaks the protein-kinase functional gate. Use an ",
+         "ancestor-propagated GO MF GMT (the Bader Lab EM_Genesets distribution is propagated).")
+  missing_canaries <- GO_PROTEIN_KINASE_CANARIES[!(GO_PROTEIN_KINASE_CANARIES %in% protein_kinase_members)]
+  if (length(missing_canaries))
+    stop("GO:0004672 is missing child-annotated canary protein kinase(s): ",
+         paste(names(missing_canaries), collapse = ", "),
+         ". The GMT may not be ancestor-propagated, or these Ensembl IDs were retired upstream.")
+  message(sprintf("  [GO] protein kinase activity (GO:0004672): %d members (ancestor-propagated)",
+                  member_count))
 }

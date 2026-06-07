@@ -4,6 +4,9 @@ data_out/
 # Cached source files (auto-downloaded by build_kinases.R) -- keep docs only
 data_in/*
 !data_in/SOURCES.md
+# KinHub is a pinned, frozen snapshot (not auto-fetched), so it is version-controlled
+# to keep the build reproducible for fresh clones.
+!data_in/kinhub_kinases.html
 
 # macOS / R artifacts
 .DS_Store

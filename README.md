@@ -36,9 +36,12 @@ HGNC symbol.
 | UniProt keyword KW-0418 ("Kinase") | broad, all-kinase-type membership **and** the primary group/subfamily taxonomy (UniProt `protein_families`) |
 | IDG understudied ("dark") kinome | annotation of understudied kinases |
 
-All sources auto-download (see `data_in/SOURCES.md` for URLs). They are cached in `data_in/`
+Most sources auto-download (see `data_in/SOURCES.md` for URLs) and are cached in `data_in/`
 with version-less filenames; the version actually used each run is recorded in
-`source_versions.tsv` and the workbook README.
+`source_versions.tsv` and the workbook README (which also record a build version tag and an MD5
+content hash of the master table). KinHub is the exception: it is a **pinned, frozen 2017
+snapshot** committed to the repo, not re-fetched. The GO sets default to the **IEA-inclusive**
+variant; a no-IEA variant is available via a toggle (see below).
 
 ## Method (the functional gate)
 
@@ -94,11 +97,13 @@ from an R session:
 invisible(lapply(list.files("helper_code", pattern = "[.]R$", full.names = TRUE), source))
 
 result <- build_kinase_list(
-  refresh_data = TRUE,   # FALSE = offline, reproducible rerun of cached files in data_in/
-  data_in_dir  = "data_in",
-  output_dir   = "data_out",
-  write_files  = TRUE,   # FALSE = build in memory only (no files written)
-  quiet        = FALSE)  # TRUE = no progress/QC messages
+  refresh_data    = TRUE,   # FALSE = offline, reproducible rerun of cached files in data_in/
+  data_in_dir     = "data_in",
+  output_dir      = "data_out",
+  write_files     = TRUE,   # FALSE = build in memory only (no files written)
+  quiet           = FALSE,  # TRUE = no progress/QC messages
+  go_include_iea  = TRUE,   # FALSE = use the no-IEA (manual/experimental-only) GO MF gene sets
+  hgnc_archive_url = NULL)  # set to an exact HGNC monthly-archive URL to pin the ID bridge
 
 result$kinases        # the table (data frame)
 result$sanity_passed  # TRUE if all QC sanity genes passed
@@ -136,10 +141,14 @@ data_out/                  generated outputs
 
 ## Reproducibility & attribution
 
-For a fixed result, keep the files in `data_in/` and run with `REFRESH_SOURCES <- FALSE`;
-`source_versions.tsv` records what a given build used. If you publish results derived from
-this table, cite the underlying data sources (HGNC, UniProt, Manning et al. 2002, KinHub /
-Eid et al. 2017, the Gene Ontology, and the IDG program) per their terms.
+For a fixed result, keep the files in `data_in/` and run with `refresh_data = FALSE`;
+`source_versions.tsv` records what a given build used, including a build version tag and an MD5
+hash of the master table. The text outputs (`human_kinases_master.csv` and the `.txt` lists)
+are byte-identical across reruns on identical cached inputs; the `.xlsx` is not (it embeds the
+build date). To pin the identifier bridge exactly, pass an HGNC monthly-archive URL via
+`hgnc_archive_url`. If you publish results derived from this table, cite the underlying data
+sources (HGNC, UniProt, Manning et al. 2002, KinHub / Eid et al. 2017, the Gene Ontology, and
+the IDG program) per their terms.
 
 ## Citation
 

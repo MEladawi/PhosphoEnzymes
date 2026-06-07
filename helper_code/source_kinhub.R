@@ -33,7 +33,9 @@ build_kinase_taxonomy <- function(uniprot_taxonomy_table, kinhub_taxonomy_table,
     if (!column_name %in% names(taxonomy_table)) {
       setNames(character(0), character(0))
     } else {
-      values <- setNames(taxonomy_table[[column_name]], taxonomy_table$ensembl_gene_id)
+      values <- taxonomy_table |>
+        select(ensembl_gene_id, all_of(column_name)) |>
+        deframe()
       values[!is.na(values) & values != ""]
     }
   }
@@ -50,5 +52,8 @@ build_kinase_taxonomy <- function(uniprot_taxonomy_table, kinhub_taxonomy_table,
     # UniProt family string is NOT mixed in here -- it is kept separately in uniprot_protein_family.
     family    = coalesce_maps(column_map(kinhub,  "family"),    column_map(manning, "family")),
     subfamily = coalesce_maps(column_map(uniprot, "subfamily"), column_map(kinhub, "subfamily"), column_map(manning, "subfamily")),
-    uniprot_family_raw = column_map(uniprot, "uniprot_protein_family"))
+    uniprot_family_raw = column_map(uniprot, "uniprot_protein_family"),
+    # UniProt's parsed family tier (from parse_uniprot_protein_family); the derived_family
+    # fallback in classify.R reuses this rather than re-parsing the raw string.
+    uniprot_family_tier = column_map(uniprot, "family"))
 }

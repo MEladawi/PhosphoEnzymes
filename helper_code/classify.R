@@ -80,6 +80,15 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
 
       dual_protein_and_nonprotein = protein_kinase & !is.na(nonprotein_class),
       confidence = if_else(n_membership_sources >= 2 | is_ec_kinase, "high", "low (single-source)"),
+      # Ordinal evidence strength (not a weighted score): membership in a dedicated kinase
+      # catalog (pkinfam/Manning/KinHub) OR a curated EC 2.7 kinase number = strong; the broad
+      # UniProt keyword = moderate; GO-umbrella-only membership = weak. Any EC kinase subclass
+      # counts (not just protein-EC): an EC assignment is a deliberate curatorial act regardless
+      # of substrate, consistent with how `confidence` treats EC.
+      evidence_tier = case_when(
+        is_pkinfam | is_manning | is_kinhub | is_ec_kinase ~ "strong",
+        is_uniprot_kw_kinase                               ~ "moderate",
+        .default                                           = "weak"),
       is_pseudogene = str_detect(coalesce(locus_type, ""), regex("pseudogene", ignore_case = TRUE)),
       ec_kinase_subclass = map_chr(matched_kinase_subclasses, \(x) paste(x, collapse = ", ")),
       # Manning taxonomy (named-vector maps keyed by Ensembl ID); NA where absent.
@@ -87,6 +96,14 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       kinase_family          = unname(taxonomy$family[ensembl_gene_id]),
       kinase_subfamily       = unname(taxonomy$subfamily[ensembl_gene_id]),
       uniprot_protein_family = unname(taxonomy$uniprot_family_raw[ensembl_gene_id]),
+      # Fallback family descriptor for genes with no Manning kinase_family (typically
+      # UniProt/GO-only atypical kinases). NON-Manning: the UniProt parsed family tier
+      # (built once by parse_uniprot_protein_family via build_kinase_taxonomy), else the GO
+      # functional class. Blank where a Manning kinase_family exists.
+      derived_family = if_else(
+        !is.na(kinase_family) & kinase_family != "",
+        NA_character_,
+        coalesce(unname(taxonomy$uniprot_family_tier[ensembl_gene_id]), nonprotein_class)),
       hgnc_kinase_gene_group = map_lgl(gene_group, \(group_field) {
         terms <- split_pipe_delimited(group_field)
         any(str_detect(terms, regex("kinase", ignore_case = TRUE)) & !str_detect(terms, noncatalytic_pattern))
@@ -96,8 +113,8 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       ensembl_gene_id,
       hgnc_symbol = symbol, hgnc_id, gene_name = name,
       kinase_type, protein_kinase,
-      kinase_group, kinase_family, kinase_subfamily, uniprot_protein_family,
-      dual_protein_and_nonprotein, confidence, n_membership_sources, curated_core,
+      kinase_group, kinase_family, derived_family, kinase_subfamily, uniprot_protein_family,
+      dual_protein_and_nonprotein, confidence, evidence_tier, n_membership_sources, curated_core,
       is_pseudogene,
       entrez_id, uniprot_ids, prev_symbol, alias_symbol,
       enzyme_id_EC = enzyme_id, ec_kinase_subclass,
