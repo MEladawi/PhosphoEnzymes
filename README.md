@@ -18,7 +18,7 @@ HGNC symbol.
 | `human_kinases_master.xlsx` | same data (styled) + a README sheet with method, sources, counts |
 | `kinases_ensembl_all.txt` | all Ensembl IDs, one per line |
 | `kinases_ensembl_protein.txt` | Ensembl IDs of protein kinases only |
-| `kinases_ensembl_highconf.txt` | Ensembl IDs with high confidence (≥2 sources or EC evidence) |
+| `kinases_ensembl_highconf.txt` | Ensembl IDs in the curated core (≥1 independent evidence axis: expert catalog or protein-EC) |
 | `kinases_symbols_all.txt` / `_protein.txt` | the same selections as HGNC symbols |
 | `kinases_unmapped.csv` | any source gene that could not be mapped (never dropped silently) |
 | `source_versions.tsv` | the exact version/date of each source used in the run |
