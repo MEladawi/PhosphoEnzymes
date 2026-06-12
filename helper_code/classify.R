@@ -11,7 +11,8 @@
 #   membership           : named list of per-source Ensembl vectors
 #   taxonomy             : build_kinase_taxonomy() output (group/family/subfamily maps)
 
-classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, membership, taxonomy) {
+classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, membership, taxonomy,
+                             go_experimental_ids = character(0)) {
   noncatalytic_pattern <- regex(
     "anchoring|phosphatase|activator|non-catalytic|guanylate kinases|subunits|MOB|binding RTK",
     ignore_case = TRUE)
@@ -43,11 +44,26 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
     add_set_flag(go_sets$carbohydrate_kinase,       in_carbohydrate) |>
     add_set_flag(go_sets$nucleotide_kinase,         in_nucleotide) |>
     add_set_flag(go_sets$creatine_kinase,           in_creatine) |>
+    # Provenance proxy: non-electronic (experimental/curated) GO kinase-activity support.
+    add_set_flag(go_experimental_ids,               go_experimental) |>
     mutate(
       n_membership_sources = is_pkinfam + is_manning + is_kinhub + is_go_kinase_activity +
                              is_ec_kinase + is_uniprot_kw_kinase + is_idg_dark_kinase,
-      curated_core = is_pkinfam | is_manning | is_kinhub | is_ec_kinase |
-                     is_uniprot_kw_kinase | is_idg_dark_kinase,
+
+      # Independent evidence axes: only genuinely INDEPENDENT curation authorities count.
+      # GO / UniProt / IDG trace to the same primary literature the catalogs use, so they are
+      # provenance, never counted. EC counts only as PROTEIN-EC (2.7.10-14) -- the surgical,
+      # substrate-specific axis -- so n_independent_evidence_axes == 2 means a gene sits in an
+      # expert catalog AND carries a protein-kinase EC number (what "Gold" certifies). Non-protein
+      # EC still types substrate below; it just is not an independent rigor axis.
+      evidence_axis_curated_catalog = is_pkinfam | is_manning | is_kinhub,
+      evidence_axis_protein_ec      = is_protein_kinase_ec,
+      n_independent_evidence_axes   = as.integer(evidence_axis_curated_catalog) +
+                                      as.integer(evidence_axis_protein_ec),
+      # curated_core = standing in at least one independent authority (an expert catalog or a
+      # protein-EC number). The comprehensive-only remainder (GO/UniProt/IDG-only) is
+      # curated_core FALSE and tiers as Provisional; this is the strict-mode population.
+      curated_core = n_independent_evidence_axes >= 1L,
 
       # First matching non-protein functional class (priority order), else NA.
       nonprotein_class = case_when(
@@ -79,16 +95,18 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
         .default        = ec_fallback_type),
 
       dual_protein_and_nonprotein = protein_kinase & !is.na(nonprotein_class),
-      confidence = if_else(n_membership_sources >= 2 | is_ec_kinase, "high", "low (single-source)"),
-      # Ordinal evidence strength (not a weighted score): membership in a dedicated kinase
-      # catalog (pkinfam/Manning/KinHub) OR a curated EC 2.7 kinase number = strong; the broad
-      # UniProt keyword = moderate; GO-umbrella-only membership = weak. Any EC kinase subclass
-      # counts (not just protein-EC): an EC assignment is a deliberate curatorial act regardless
-      # of substrate, consistent with how `confidence` treats EC.
+      # evidence_tier: a documented PRIORITIZATION HEURISTIC over the independent axes plus
+      # experimental GO support -- NOT a probability, evidence count, or confidence score. Gold
+      # requires both independent axes; Silver/Bronze split the one-axis genes by whether they
+      # carry non-electronic (experimental/curated) GO support; Provisional is the
+      # comprehensive-only remainder. GO never reaches Gold by design -- it shares literature
+      # provenance with the catalogs, so admitting it would reintroduce the coupling the axis
+      # count exists to exclude.
       evidence_tier = case_when(
-        is_pkinfam | is_manning | is_kinhub | is_ec_kinase ~ "strong",
-        is_uniprot_kw_kinase                               ~ "moderate",
-        .default                                           = "weak"),
+        n_independent_evidence_axes == 2L                   ~ "Gold",
+        n_independent_evidence_axes == 1L & go_experimental ~ "Silver",
+        n_independent_evidence_axes == 1L                   ~ "Bronze",
+        .default                                            = "Provisional"),
       is_pseudogene = str_detect(coalesce(locus_type, ""), regex("pseudogene", ignore_case = TRUE)),
       ec_kinase_subclass = map_chr(matched_kinase_subclasses, \(x) paste(x, collapse = ", ")),
       # Manning taxonomy (named-vector maps keyed by Ensembl ID); NA where absent.
@@ -114,7 +132,8 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       hgnc_symbol = symbol, hgnc_id, gene_name = name,
       kinase_type, protein_kinase,
       kinase_group, kinase_family, derived_family, kinase_subfamily, uniprot_protein_family,
-      dual_protein_and_nonprotein, confidence, evidence_tier, n_membership_sources, curated_core,
+      dual_protein_and_nonprotein, evidence_tier, n_independent_evidence_axes, go_experimental,
+      n_membership_sources, curated_core,
       is_pseudogene,
       entrez_id, uniprot_ids, prev_symbol, alias_symbol,
       enzyme_id_EC = enzyme_id, ec_kinase_subclass,

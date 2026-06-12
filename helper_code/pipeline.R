@@ -73,6 +73,11 @@ build_kinase_list <- function(refresh_data    = TRUE,
 
     message("Loading sources ...")
     go_sets           <- load_go_functional_sets(path_for("go_mf_genesets"))
+    # Experimental-GO proxy for the evidence tier: membership in the NO-IEA GO kinase-activity
+    # set (non-electronic annotations only). Loaded from the no-IEA GMT independently of whichever
+    # GO variant feeds the gate, so the signal is available either way (file-level proxy).
+    go_experimental_ids <- load_go_experimental_ids(
+      file.path(data_in_dir, GO_GENESET_VARIANTS$no_iea$filename))
     pkinfam_source    <- load_pkinfam_kinome(path_for("uniprot_pkinfam"), hgnc_bridge)
     manning_source    <- load_manning_kinome(path_for("manning_kinome"), hgnc_bridge)
     kinhub_source     <- load_kinhub_kinome(path_for("kinhub"), hgnc_bridge)
@@ -100,7 +105,8 @@ build_kinase_list <- function(refresh_data    = TRUE,
 
     message("Classifying and assembling ...")
     kinases_table <- classify_kinases(universe_ensembl_ids, hgnc_bridge, go_sets,
-                                      ec_source, membership, kinase_taxonomy)
+                                      ec_source, membership, kinase_taxonomy,
+                                      go_experimental_ids = go_experimental_ids)
 
     if (write_files) {
       message("Writing outputs to ", output_dir, "/ ...")
