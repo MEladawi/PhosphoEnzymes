@@ -101,6 +101,21 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
         protein_kinase  ~ "Protein kinase",
         .default        = ec_fallback_type),
 
+      # Human-readable rationale for the substrate call -- the gate decision in words.
+      protein_evidence_label = case_when(
+        in_structural_catalog & is_protein_kinase_ec & in_protein_kinase_go ~ "structural catalog + protein-EC + GO",
+        in_structural_catalog & is_protein_kinase_ec                        ~ "structural catalog + protein-EC",
+        in_structural_catalog & in_protein_kinase_go                        ~ "structural catalog + GO",
+        is_protein_kinase_ec  & in_protein_kinase_go                        ~ "protein-EC + GO",
+        in_structural_catalog                                              ~ "structural catalog",
+        is_protein_kinase_ec                                               ~ "protein-EC",
+        in_protein_kinase_go                                               ~ "GO protein-kinase activity",
+        .default                                                           = "lineage evidence"),
+      classification_reason = case_when(
+        nonprotein_wins ~ str_c(nonprotein_class, ": non-protein substrate; no protein-kinase GO or protein-EC"),
+        protein_kinase  ~ str_c("protein kinase: ", protein_evidence_label),
+        .default        = str_c(ec_fallback_type, ": EC-subclass fallback; no protein or non-protein GO evidence")),
+
       dual_protein_and_nonprotein = protein_kinase & !is.na(nonprotein_class),
       # evidence_tier: a documented PRIORITIZATION HEURISTIC over the two axes plus
       # supplementary support -- NOT a probability, evidence count, or confidence score. Gold
@@ -141,6 +156,7 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       kinase_group, kinase_family, derived_family, kinase_subfamily, uniprot_protein_family,
       dual_protein_and_nonprotein, evidence_tier, n_independent_evidence_axes,
       go_experimental, supplementary_support,
+      in_structural_catalog, is_protein_kinase_ec, classification_reason,
       n_membership_sources, curated_core,
       is_pseudogene,
       entrez_id, uniprot_ids, prev_symbol, alias_symbol,

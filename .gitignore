@@ -1,15 +1,15 @@
-# Generated outputs (recreated by build_kinases.R)
+# Generated outputs (legacy script pipeline)
 data_out/
 
-# Cached source files (auto-downloaded by build_kinases.R) -- keep docs only
-data_in/*
-!data_in/SOURCES.md
-# KinHub is a pinned, frozen snapshot (not auto-fetched), so it is version-controlled
-# to keep the build reproducible for fresh clones.
-!data_in/kinhub_kinases.html
+# Source snapshots in inst/extdata -- the committed pinned set is finalized later;
+# for now keep only the docs and the frozen KinHub snapshot under version control.
+inst/extdata/*
+!inst/extdata/SOURCES.md
+!inst/extdata/kinhub_kinases.html
 
-# Ignore everything starting with a dot (.DS_Store, .Rhistory, .RData, .Rproj.user/, 
-# etc.). Keep the repo's own git meta files.
+# Ignore dotfiles (.DS_Store, .Rhistory, .RData, .Rproj.user/, etc.), but keep the
+# repo's own meta files that must stay under version control.
 .*
 !.gitignore
 !.gitattributes
+!.Rbuildignore

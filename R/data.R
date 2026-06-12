@@ -1,0 +1,72 @@
+#' Human kinase reference table
+#'
+#' One row per human kinase gene, keyed on base Ensembl gene ID and typed by
+#' substrate class. Built by `inst/scripts/make-data.R` from pinned source
+#' snapshots; see the vignette for the evidence model.
+#'
+#' @format A data frame with one row per gene and the following columns:
+#' \describe{
+#'   \item{ensembl_gene_id}{Base (unversioned) Ensembl gene ID. Primary key.}
+#'   \item{symbol}{HGNC symbol.}
+#'   \item{acts_on_protein}{Logical. TRUE if the enzyme acts on protein
+#'     substrates (equivalently `substrate_type == "protein"`).}
+#'   \item{substrate_type}{One of "protein", "lipid", "nucleotide",
+#'     "carbohydrate", "other".}
+#'   \item{substrate_subtype}{Finer-grained substrate label (e.g.
+#'     "Inositol-phosphate kinase", "Creatine kinase").}
+#'   \item{n_independent_evidence_axes}{Integer 0-2. Count of independent evidence
+#'     types confirming a protein-directed enzyme: (1) structural/evolutionary
+#'     sequence-family catalog, (2) biochemical protein-specific EC. The rigor
+#'     metric.}
+#'   \item{evidence_tier}{"Gold" / "Silver" / "Bronze" / "Provisional". Practical
+#'     prioritization heuristic over the two axes plus supplementary GO/UniProt-
+#'     keyword support. Not a probability, not an evidence count, not a confidence
+#'     score.}
+#'   \item{curated_core}{Logical. TRUE if the gene has >= 1 independent axis (i.e.
+#'     not Provisional / not comprehensive-only).}
+#'   \item{in_structural_catalog}{Logical. Axis 1: Manning / KinHub / kinase.com /
+#'     pkinfam.}
+#'   \item{is_protein_kinase_ec}{Logical. Axis 2: a protein-specific EC
+#'     (2.7.10-2.7.14).}
+#'   \item{go_experimental}{Logical. A non-electronic GO kinase-activity code is
+#'     present (experimental/curated support).}
+#'   \item{has_uniprot_kw}{Logical. Reviewed Swiss-Prot kinase keyword present.}
+#'   \item{supplementary_support}{Logical. `go_experimental` OR `has_uniprot_kw`;
+#'     splits Silver from Bronze among single-axis genes.}
+#'   \item{kinase_family}{Manning family (catalog-pure); may be NA.}
+#'   \item{classification_reason}{Human-readable rationale for the substrate call.}
+#'   \item{kinase_group}{Manning group (AGC, CMGC, ...); may be NA.}
+#'   \item{kinase_subfamily}{Manning subfamily; may be NA.}
+#'   \item{derived_family}{Non-Manning family descriptor for genes lacking a
+#'     `kinase_family` (from the UniProt family string or the GO class).}
+#'   \item{uniprot_protein_family}{Raw UniProt "Protein families" string.}
+#'   \item{dual_protein_and_nonprotein}{Logical. A protein kinase that also has a
+#'     non-protein kinase activity (e.g. PI3K family, NME1, DGKQ).}
+#'   \item{n_membership_sources}{Integer 0-7. Count of the per-source `is_*`
+#'     flags; informational breadth-of-support (not the rigor metric).}
+#'   \item{is_pseudogene}{Logical. HGNC locus type matches "pseudogene".}
+#'   \item{hgnc_id}{HGNC identifier.}
+#'   \item{gene_name}{HGNC approved gene name.}
+#'   \item{entrez_id}{NCBI Entrez gene ID.}
+#'   \item{uniprot_ids}{UniProt accession(s).}
+#'   \item{prev_symbol}{HGNC previous symbol(s).}
+#'   \item{alias_symbol}{HGNC alias symbol(s).}
+#'   \item{enzyme_id_EC}{EC number(s) from HGNC `enzyme_id`.}
+#'   \item{ec_kinase_subclass}{Matched EC 2.7 kinase subclass(es).}
+#'   \item{hgnc_gene_group}{HGNC gene-group membership string.}
+#'   \item{locus_type}{HGNC locus type.}
+#'   \item{chromosomal_location}{Cytogenetic location.}
+#'   \item{mane_select_transcript}{MANE Select transcript.}
+#'   \item{iuphar_id}{IUPHAR/Guide to Pharmacology identifier.}
+#'   \item{hgnc_kinase_gene_group}{Logical. HGNC gene-group names a kinase group
+#'     (excluding non-catalytic terms).}
+#'   \item{is_pkinfam}{Logical. Member of UniProt pkinfam.}
+#'   \item{is_manning}{Logical. Member of the Manning / kinase.com kinome.}
+#'   \item{is_kinhub}{Logical. Member of the KinHub kinome.}
+#'   \item{is_go_kinase_activity}{Logical. In the GO kinase-activity umbrella.}
+#'   \item{is_ec_kinase}{Logical. Carries an EC 2.7 kinase number (any subclass).}
+#'   \item{is_idg_dark_kinase}{Logical. In the IDG understudied ("dark") kinome.}
+#' }
+#' @source Manning et al. Science 2002;298:1912-1934; KinHub/KinMap (Eid 2017);
+#'   kinase.com; UniProt pkinfam; GO; IUBMB EC. See the package vignette.
+"human_kinases"

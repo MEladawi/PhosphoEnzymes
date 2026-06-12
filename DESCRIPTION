@@ -1,0 +1,54 @@
+Package: PhosphoEnzymes
+Title: A Reproducible, Function-First Reference of Human Kinases and Phosphatases
+Version: 0.99.0
+Authors@R:
+    person(given = "Mahmoud", family = "Eladawi",
+           role = c("aut", "cre"),
+           email = "eladawimahmoud@tutamail.com",
+           comment = c(ORCID = "0000-0003-1383-834X"))
+Description: A reproducible reference resource for the human phosphorylation
+    machinery: protein kinases and protein phosphatases, assembled from
+    multiple expert catalogs and keyed on base Ensembl gene IDs. Enzymes are
+    typed by substrate class (protein vs lipid / nucleotide / carbohydrate)
+    via a function-first gate that keeps sequence-family membership as evidence
+    rather than letting it override substrate (the PI3K / PTEN principle).
+    Each gene carries a rigor metric counting independent evidence types
+    (structural/evolutionary catalog and protein-specific EC) and a practical
+    evidence_tier. Built tables ship as package data; the deterministic
+    regeneration pipeline lives in inst/scripts. See the vignette for usage.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 4.4.0)
+Imports:
+    tibble
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    BiocStyle,
+    dplyr,
+    readr,
+    tidyr,
+    stringr,
+    purrr,
+    rvest,
+    readxl,
+    hgnc,
+    yaml,
+    usethis,
+    pkgload
+biocViews:
+    Software,
+    FunctionalGenomics,
+    GeneTarget,
+    Proteomics,
+    Pathways,
+    Annotation
+URL: https://github.com/MEladawi/PhosphoEnzymes
+BugReports: https://github.com/MEladawi/PhosphoEnzymes/issues
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Config/testthat/edition: 3

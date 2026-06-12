@@ -1,0 +1,10 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.github$
+^README\.md$
+^LICENSE\.md$
+^CITATION\.cff$
+^inst/scripts/.*\.log$
+^data_out$
+^doc$
+^\.[^/]+$

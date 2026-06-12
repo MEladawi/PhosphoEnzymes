@@ -1,165 +1,40 @@
-# Human kinase reference table
+# PhosphoEnzymes
 
-A small, reproducible R pipeline that builds a **comprehensive human kinase gene list** by
-integrating seven authoritative kinase resources, keyed on **base (unversioned) Ensembl gene
-IDs**. Every gene is typed by enzymatic **function** (protein vs lipid / sugar / nucleotide /
-etc.), and every source is exposed as an independent binary column so the kinome can be
-filtered per source for any project.
+A reproducible, function-first reference of human **kinases and phosphatases**,
+keyed on base Ensembl gene IDs and typed by substrate class.
 
-Use it to select or annotate kinase genes in any analysis — filtering an expression matrix,
-annotating a hit list, comparing assays, etc. Match your data on Ensembl ID (preferred) or
-HGNC symbol.
-
-## What it produces (`data_out/`)
-
-| File | Contents |
-|---|---|
-| `human_kinases_master.csv` | the full table, one row per kinase gene |
-| `human_kinases_master.xlsx` | same data (styled) + a README sheet with method, sources, counts |
-| `kinases_ensembl_all.txt` | all Ensembl IDs, one per line |
-| `kinases_ensembl_protein.txt` | Ensembl IDs of protein kinases only |
-| `kinases_ensembl_highconf.txt` | Ensembl IDs in the curated core (≥1 independent evidence axis: expert catalog or protein-EC) |
-| `kinases_symbols_all.txt` / `_protein.txt` | the same selections as HGNC symbols |
-| `kinases_unmapped.csv` | any source gene that could not be mapped (never dropped silently) |
-| `source_versions.tsv` | the exact version/date of each source used in the run |
-
-## Sources
-
-| Source | Role |
-|---|---|
-| HGNC complete set | **identifier bridge** (Entrez / UniProt / symbol → Ensembl); also gene metadata |
-| UniProt pkinfam | curated protein kinome |
-| Manning kinome (kinase.com) | classical kinome + group/family/subfamily taxonomy |
-| KinHub (kinhub.org) | Manning classification with current HGNC names (taxonomy fallback) |
-| GO molecular-function gene sets (Bader Lab, Ensembl-keyed) | functional umbrella, the protein-kinase gate, and non-protein classes |
-| HGNC EC 2.7 subclasses | phosphotransferase (kinase) enzyme classes |
-| UniProt keyword KW-0418 ("Kinase") | broad, all-kinase-type membership **and** the primary group/subfamily taxonomy (UniProt `protein_families`) |
-| IDG understudied ("dark") kinome | annotation of understudied kinases |
-
-Most sources auto-download (see `data_in/SOURCES.md` for URLs) and are cached in `data_in/`
-with version-less filenames; the version actually used each run is recorded in
-`source_versions.tsv` and the workbook README (which also record a build version tag and an MD5
-content hash of the master table). KinHub is the exception: it is a **pinned, frozen 2017
-snapshot** committed to the repo, not re-fetched. The GO sets default to the **IEA-inclusive**
-variant; a no-IEA variant is available via a toggle (see below).
-
-## Method (the functional gate)
-
-Membership in the kinase list is the **union** of the seven source legs (mapped to Ensembl
-via HGNC). Each gene is then typed by function: a gene with a *non-protein* GO kinase
-activity is typed non-protein **only if** it is not annotated with GO protein-kinase activity
-(`GO:0004672`). This single gate is what classifies e.g. PI4KA/SPHK1/DGKA as lipid kinases
-but PRKCA/ATM/MTOR/PIK3CA as protein kinases. Non-protein typing priority is
-lipid → inositol-phosphate → carbohydrate → nucleotide → creatine, with an EC-subclass
-fallback.
-
-Taxonomy is assigned per field, each "first non-blank" across the listed sources:
-
-- `kinase_group` — UniProt → KinHub → kinase.com. UniProt's value is the leading token of its
-  `protein_families` string (with `Tyr`→`TK`), accepted only if it is a real Manning group
-  (AGC/CAMK/CK1/CMGC/NEK/RGC/STE/TK/TKL/Other/Atypical); otherwise it is left blank for
-  KinHub/kinase.com to fill (non-protein kinases get no group).
-- `kinase_family` — KinHub → kinase.com only: the Manning short tier (Akt, CDK, FGFR …). The
-  verbose UniProt family string is **not** mixed into this column.
-- `kinase_subfamily` — UniProt → KinHub → kinase.com.
-- `uniprot_protein_family` — the raw UniProt `Protein families` string, kept verbatim.
-
-UniProt is the actively-curated, up-to-date source; KinHub (2017) and kinase.com (2002) are
-static, so they serve as fallbacks for the fixed Manning group/family/subfamily scheme.
-
-Identifier resolution is guarded against stale source IDs: a candidate gene that is an RNA
-locus, or whose HGNC symbol history (current + alias + previous) disagrees with the source
-symbol, is rejected in favour of a consistent hit.
-
-## Requirements
-
-- R (≥ 4.1)
-- Packages: `readr dplyr tidyr stringr purrr tibble rvest readxl openxlsx`, plus
-  `hgnc` (and its dependency `lubridate`) used to fetch the latest HGNC release.
-  The script installs any that are missing.
-- Internet access on first run (or whenever refreshing sources).
-
-## Usage
-
-From the shell:
-
-```sh
-Rscript build_kinases.R
-```
-
-This refreshes the auto-updatable sources (at most once per day), builds the table, writes
-`data_out/`, and prints a QC report that asserts a set of sanity genes.
-
-Everything runs through a single function, `build_kinase_list()`, so you can also drive it
-from an R session:
+> Status: the kinase reference is complete. The phosphatase tables, the unified
+> phospho-enzyme summary, and the regulatory-subunit companion are in progress;
+> their accessors are present but return data only once those tables are built.
 
 ```r
-invisible(lapply(list.files("helper_code", pattern = "[.]R$", full.names = TRUE), source))
-
-result <- build_kinase_list(
-  refresh_data    = TRUE,   # FALSE = offline, reproducible rerun of cached files in data_in/
-  data_in_dir     = "data_in",
-  output_dir      = "data_out",
-  write_files     = TRUE,   # FALSE = build in memory only (no files written)
-  quiet           = FALSE,  # TRUE = no progress/QC messages
-  go_include_iea  = TRUE,   # FALSE = use the no-IEA (manual/experimental-only) GO MF gene sets
-  hgnc_archive_url = NULL)  # set to an exact HGNC monthly-archive URL to pin the ID bridge
-
-result$kinases        # the table (data frame)
-result$sanity_passed  # TRUE if all QC sanity genes passed
+library(PhosphoEnzymes)
+get_kinases()                  # all kinases, one row per gene, typed by substrate
+get_kinases(mode = "strict")   # canonical set (>= 1 independent evidence axis)
 ```
 
-## Repo structure
+## Evidence model
 
-```
-build_kinases.R            thin entry point: loads helper_code/ and calls build_kinase_list()
-helper_code/
-  pipeline.R               build_kinase_list(): the end-to-end pipeline + messaging
-  utils.R                  shared helpers
-  source_registry.R        all sources + the updater + version manifest
-  hgnc_bridge.R            HGNC reader, lookup maps, resolve_to_ensembl()
-  go_functional_sets.R     GO gene sets (Ensembl-keyed), selected by GO accession
-  source_pkinfam.R         one file per data source ...
-  source_manning.R
-  source_kinhub.R          (+ build_kinase_taxonomy)
-  source_uniprot_kw.R
-  source_idg.R
-  source_ec.R
-  classify.R               per-gene functional classification + table assembly
-  outputs.R                writes files/workbook + QC report
-data_in/                   cached source files (+ SOURCES.md)
-data_out/                  generated outputs
-```
+`n_independent_evidence_axes` (0-2) counts independent evidence **types**:
+(1) a structural/evolutionary sequence-family catalog and (2) a protein-specific
+4-digit EC. It is the rigor metric, and the word *independent* is literally true.
+`evidence_tier` (Gold/Silver/Bronze/Provisional) is a practical heuristic: Gold
+needs both axes; Silver one axis plus supplementary support (experimental GO or a
+reviewed UniProt keyword); Bronze one axis without it; Provisional none. It is
+not a probability or a confidence score.
 
-## Extending it
+Typing is function-first: sequence-family membership is evidence of lineage, never
+an override of substrate (the PI3K / PTEN principle).
 
-- **Add a source:** add an entry to `SOURCE_REGISTRY` (`helper_code/source_registry.R`) and a
-  small `load_*()` that returns `list(ensembl_ids = ..., unmapped = ...)`, then wire it into
-  the `membership` list in `build_kinases.R`.
-- **Adjust GO typing:** edit the GO accessions in `helper_code/go_functional_sets.R`.
-- **Change kinase EC subclasses:** edit the vectors in `helper_code/source_ec.R`.
+## Build / provenance
 
-## Reproducibility & attribution
+The tables ship as package data. They are regenerated by maintainers from pinned,
+dated source snapshots via `inst/scripts/make-data.R` (no network access at install
+or load time); provenance is recorded in `inst/build_manifest.yaml`.
 
-For a fixed result, keep the files in `data_in/` and run with `refresh_data = FALSE`;
-`source_versions.tsv` records what a given build used, including a build version tag and an MD5
-hash of the master table. The text outputs (`human_kinases_master.csv` and the `.txt` lists)
-are byte-identical across reruns on identical cached inputs; the `.xlsx` is not (it embeds the
-build date). To pin the identifier bridge exactly, pass an HGNC monthly-archive URL via
-`hgnc_archive_url`. If you publish results derived from this table, cite the underlying data
-sources (HGNC, UniProt, Manning et al. 2002, KinHub / Eid et al. 2017, the Gene Ontology, and
-the IDG program) per their terms.
+## License & attribution
 
-## Citation
-
-If you use this software or the kinase table it produces, please cite it. Citation metadata
-is in [`CITATION.cff`](CITATION.cff) (GitHub shows a "Cite this repository" button generated
-from it). This citation covers the **pipeline**; also cite the upstream data sources listed
-above for the underlying annotations.
-
-## License
-
-The source code is released under the [MIT License](LICENSE) — free to use, modify, and
-redistribute, provided the copyright and license notice are retained. The MIT license applies
-to the **code** only; the generated kinase table is derived from third-party data sources,
-each of which carries its own terms that downstream users must respect.
+The package code is MIT-licensed (see `LICENSE`). The source datasets it is built
+from (HGNC, UniProt, Manning et al. 2002, KinHub, the Gene Ontology, IUBMB EC, the
+IDG program) each carry their own terms; cite those upstream sources when you
+publish results derived from the shipped tables.

@@ -1,0 +1,26 @@
+citHeader("To cite PhosphoEnzymes, please cite the package and its primary sources:")
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "PhosphoEnzymes: a reproducible reference of human kinases and phosphatases",
+  author   = person("Mahmoud", "Eladawi"),
+  year     = "2026",
+  note     = "R package version 0.99.0",
+  url      = "https://github.com/MEladawi/PhosphoEnzymes"
+)
+
+bibentry(
+  bibtype = "Article",
+  title   = "Genomics and evolution of protein phosphatases",
+  author  = c(person("Mark J.", "Chen"), person("Jack E.", "Dixon"), person("Gerard", "Manning")),
+  journal = "Science Signaling",
+  year    = "2017", volume = "10", number = "474",
+  doi     = "10.1126/scisignal.aag1796"
+)
+
+bibentry(
+  bibtype = "Article",
+  title   = "The protein kinase complement of the human genome",
+  author  = person("Gerard", "Manning"),
+  journal = "Science", year = "2002", volume = "298", pages = "1912-1934"
+)

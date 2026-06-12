@@ -1,0 +1,76 @@
+---
+title: "PhosphoEnzymes: human kinases and phosphatases"
+output: BiocStyle::html_document
+vignette: >
+  %\VignetteIndexEntry{PhosphoEnzymes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(PhosphoEnzymes)
+```
+
+# Overview
+
+`PhosphoEnzymes` provides class-specific master tables for the human
+phosphorylation machinery, keyed on base Ensembl gene IDs and typed by substrate
+class. Enzymes are typed by what they act on; sequence-family membership is
+evidence of lineage, not an override of substrate.
+
+The kinase table is available now via `get_kinases()`. The phosphatase table, the
+derived unified summary, and the regulatory-subunit companion are forthcoming;
+their accessors are present and return data once those tables are built.
+
+# Accessing the tables
+
+```{r}
+k <- get_kinases()
+nrow(k)
+table(k$substrate_type)
+```
+
+```{r, eval = FALSE}
+get_kinases(mode = "strict")   # canonical set: >= 1 independent evidence axis
+get_phosphatases()             # forthcoming
+get_phosphoenzymes()           # forthcoming
+get_phosphatase_regulators()   # forthcoming
+```
+
+# The evidence model
+
+`n_independent_evidence_axes` (0-2) counts independent evidence **types**:
+
+1. **Structural / evolutionary catalog** -- membership in an expert
+   sequence-family catalog (`in_structural_catalog`).
+2. **Biochemical** -- a protein-specific 4-digit EC (`is_protein_kinase_ec`,
+   EC 2.7.10-2.7.14 for kinases).
+
+Because the catalogs all answer the same fold question from overlapping
+scholarship, they roll up into a single axis; GO and the reviewed UniProt keyword
+are supplementary support, not counted axes.
+
+`evidence_tier` is a practical prioritization heuristic over those two axes plus
+supplementary support:
+
+| tier | condition |
+|------|-----------|
+| Gold | both axes (structure **and** biochemistry) |
+| Silver | one axis **and** supplementary support (experimental GO or reviewed keyword) |
+| Bronze | one axis, no supplementary support |
+| Provisional | zero axes |
+
+Because Gold requires the biochemical axis, it is common among well-characterized
+kinases but will be rarer among phosphatases, whose protein-specific EC coverage
+is far thinner -- a real feature of the underlying data, not a scoring artifact.
+
+```{r}
+table(k$evidence_tier)
+```
+
+# Session info
+
+```{r}
+sessionInfo()
+```

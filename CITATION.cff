@@ -1,25 +1,27 @@
 cff-version: 1.2.0
-message: "If you use this software or the kinase table it produces, please cite it as below."
-title: "Human kinase reference table"
+message: "If you use PhosphoEnzymes, please cite it as below."
+title: "PhosphoEnzymes: a reproducible, function-first reference of human kinases and phosphatases"
 abstract: >-
-  A reproducible R pipeline that builds a comprehensive human kinase gene table by
-  integrating seven kinase resources (UniProt pkinfam, Manning/kinase.com, KinHub,
-  GO molecular-function gene sets, HGNC EC 2.7 subclasses, UniProt keyword KW-0418,
-  and the IDG dark kinome), keyed on base Ensembl gene IDs and typed by enzymatic
-  function.
+  A reproducible reference resource for the human phosphorylation machinery -- protein
+  kinases and protein phosphatases -- assembled from multiple expert catalogs, keyed on
+  base Ensembl gene IDs, and typed by substrate class via a function-first gate that keeps
+  sequence-family membership as evidence rather than an override of substrate. Each gene
+  carries a rigor metric counting independent evidence types and a practical evidence tier.
 type: software
 authors:
   - family-names: Eladawi
     given-names: Mahmoud
     orcid: "https://orcid.org/0000-0003-1383-834X"
-version: 1.0.0
-date-released: "2026-06-06"
+version: 0.99.0
+date-released: "2026-06-12"
 license: MIT
-repository-code: "https://github.com/MEladawi/Kinases-List-Curation"
-url: "https://github.com/MEladawi/Kinases-List-Curation"
+repository-code: "https://github.com/MEladawi/PhosphoEnzymes"
+url: "https://github.com/MEladawi/PhosphoEnzymes"
 keywords:
   - kinase
+  - phosphatase
   - kinome
+  - phosphatome
   - human
   - Ensembl
   - gene annotation
