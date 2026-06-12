@@ -1,0 +1,37 @@
+build_date: '2026-06-12'
+package_version: 0.99.0
+tables:
+  human_kinases:
+    n_rows: 753
+    n_cols: 42
+    md5: 070e48a4194b91298fde5d93310e1b34
+sources:
+- source: HGNC complete set (identifier bridge)
+  file: hgnc_complete_set.txt
+  version: 'HGNC monthly | archive: archive URL not recorded | file dated 2026-06-07'
+  fetched: '2026-06-07'
+- source: UniProt pkinfam (curated protein kinome)
+  file: pkinfam.txt
+  version: 2026_01 of 28-Jan-2026
+  fetched: '2026-06-07'
+- source: GO molecular-function gene sets (Bader Lab EM_Genesets, Ensembl-keyed)
+  file: go_mf_genesets_with_iea_ensembl.gmt
+  version: Bader Lab EM_Genesets current_release, IEA-inclusive (electronic annotations
+    included), fetched 2026-06-07
+  fetched: '2026-06-07'
+- source: Manning kinome (kinase.com)
+  file: kinase.com_manning_list.xls
+  version: Manning et al. 2002 (static), fetched 2026-06-07
+  fetched: '2026-06-07'
+- source: KinHub human kinase list (pinned snapshot)
+  file: kinhub_kinases.html
+  version: kinhub.org (Eid et al. 2017), pinned snapshot dated 2026-06-07
+  fetched: '2026-06-07'
+- source: UniProtKB reviewed human, keyword KW-0418 (Kinase)
+  file: uniprot_kinase_KW-0418_human.tsv
+  version: UniProtKB reviewed, fetched 2026-06-07
+  fetched: '2026-06-07'
+- source: IDG understudied (dark) kinome
+  file: IDG_dark_kinase_list.csv
+  version: IDG DarkKinaseTools, fetched 2026-06-07
+  fetched: '2026-06-07'
