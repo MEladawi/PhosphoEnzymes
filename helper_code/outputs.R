@@ -17,7 +17,7 @@ count_genes_per_source <- function(kinases_table) {
 # schema is versioned alongside the table. Logical and categorical columns carry their allowed
 # value set; everything else is declared by type only.
 build_master_schema_yaml <- function(kinases_table, pipeline_version = "unversioned") {
-  enum_columns <- c("kinase_type", "confidence", "evidence_tier")
+  enum_columns <- c("kinase_type", "evidence_tier")
   r_type <- function(column) {
     if (is.logical(column)) "logical"
     else if (is.integer(column)) "integer"
@@ -56,7 +56,9 @@ write_outputs <- function(kinases_table, unmapped_table, output_dir, source_mani
   write_lines(kinases_table$ensembl_gene_id, file.path(output_dir, "kinases_ensembl_all.txt"))
   write_lines(kinases_table$ensembl_gene_id[kinases_table$protein_kinase],
               file.path(output_dir, "kinases_ensembl_protein.txt"))
-  write_lines(kinases_table$ensembl_gene_id[kinases_table$confidence == "high"],
+  # "highconf" list = the curated-core (strict-mode) population: genes with >=1 independent
+  # evidence axis (expert catalog or protein-EC), i.e. evidence_tier != Provisional.
+  write_lines(kinases_table$ensembl_gene_id[kinases_table$curated_core],
               file.path(output_dir, "kinases_ensembl_highconf.txt"))
   write_lines(kinases_table$hgnc_symbol, file.path(output_dir, "kinases_symbols_all.txt"))
   write_lines(kinases_table$hgnc_symbol[kinases_table$protein_kinase],
@@ -128,11 +130,16 @@ write_outputs <- function(kinases_table, unmapped_table, output_dir, source_mani
     "  uniprot_protein_family : raw UniProt 'Protein families' string.",
     "  protein_kinase ...... TRUE for protein kinases; FALSE for small-molecule",
     "                        kinases (lipid / sugar / nucleotide / etc.).",
-    "  curated_core ........ in a curated/functional leg (not GO-umbrella only);",
-    "                        GO-only singletons hold most false positives.",
-    "  confidence .......... high if >=2 sources or any EC kinase subclass.",
-    "  evidence_tier ....... strong (pkinfam/Manning/KinHub/any EC kinase subclass) > moderate",
-    "                        (UniProt KW-0418) > weak (GO-umbrella-only). Ordinal, not a score.",
+    "  n_independent_evidence_axes : count of genuinely independent evidence authorities",
+    "                        (curated expert catalog; IUBMB protein-EC). 0-2. The rigor metric.",
+    "  curated_core ........ n_independent_evidence_axes >= 1 (in an expert catalog or carrying",
+    "                        a protein-EC number). This is the strict-mode population.",
+    "  go_experimental ..... TRUE if the gene has non-electronic (experimental/curated) GO",
+    "                        kinase-activity support (no-IEA GMT). Provenance, not counted.",
+    "  evidence_tier ....... practical prioritization heuristic over the independent axes plus",
+    "                        experimental GO support. Gold (both axes) > Silver (one axis +",
+    "                        go_experimental) > Bronze (one axis) > Provisional (neither axis).",
+    "                        Not a probability, not an evidence count, not a confidence score.",
     "  dual_protein_and_nonprotein : protein kinase that also has a non-protein",
     "                        kinase function (e.g. PI3K family, NME).",
     "",
@@ -158,8 +165,12 @@ qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_
                  go_protein_kinase_n))
   emit(sprintf("Protein kinases ........ %d\n", sum(kinases_table$protein_kinase)))
   emit(sprintf("Non-protein kinases .... %d\n", sum(!kinases_table$protein_kinase)))
-  emit(sprintf("High confidence ........ %d\n", sum(kinases_table$confidence == "high")))
-  emit(sprintf("Curated core ........... %d\n", sum(kinases_table$curated_core)))
+  tier_levels <- c("Gold", "Silver", "Bronze", "Provisional")
+  tier_counts <- table(factor(kinases_table$evidence_tier, levels = tier_levels))
+  emit(sprintf("Evidence tier .......... Gold %d | Silver %d | Bronze %d | Provisional %d\n",
+               tier_counts[["Gold"]], tier_counts[["Silver"]],
+               tier_counts[["Bronze"]], tier_counts[["Provisional"]]))
+  emit(sprintf("Curated core (strict) .. %d\n", sum(kinases_table$curated_core)))
   emit(sprintf("Dual (protein+nonprot).. %d\n", sum(kinases_table$dual_protein_and_nonprotein)))
   emit(sprintf("Pseudogenes ............ %d\n", sum(kinases_table$is_pseudogene)))
   emit(sprintf("Unmapped (reported) .... %d\n", nrow(distinct(unmapped_table))))
