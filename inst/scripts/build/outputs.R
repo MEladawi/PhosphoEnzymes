@@ -197,7 +197,11 @@ qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_
     "ATM",    "Protein kinase",               TRUE,  FALSE,
     "MTOR",   "Protein kinase",               TRUE,  FALSE,
     "PRKCA",  "Protein kinase",               TRUE,  FALSE,
-    "TRIB1",  "Protein kinase",               TRUE,  FALSE,
+    # TRIB1 is a pseudokinase carrying no EC and no kinase-activity GO term, so it has no
+    # substrate signal and is typed "untyped" -- substrate is never inferred from catalog
+    # lineage. Its catalytic_status == "pseudo" call is the property that actually matters and
+    # is guarded in the test suite.
+    "TRIB1",  "Unclassified kinase",          FALSE, FALSE,
     "CASK",   "Protein kinase",               TRUE,  FALSE,
     "POMK",   "Protein kinase",               TRUE,  TRUE,
     "FAM20C", "Protein kinase",               TRUE,  FALSE)
@@ -223,9 +227,13 @@ qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_
     str_detect(coalesce(kinases_table$uniprot_protein_family, ""), regex(pattern, ignore_case = TRUE))
   manning_protein_groups <- c("AGC", "CAMK", "CK1", "CMGC", "NEK", "RGC", "STE", "TK", "TKL")
   class_invariants <- list(
-    list(label = "Manning protein-group genes are protein kinases",
+    # Lineage no longer implies a protein substrate: a Manning-catalog gene with neither a
+    # protein-kinase GO term nor a protein EC is now untyped, not protein. The real guarding purpose
+    # is catching a Manning kinase mislabelled non-protein (e.g. lipid), so this forbids only
+    # non-protein typing of Manning-group genes -- protein OR untyped is allowed.
+    list(label = "Manning protein-group genes are never typed non-protein",
          in_family = kinases_table$kinase_group %in% manning_protein_groups,
-         holds     = function(rows) all(rows$protein_kinase)),
+         holds     = function(rows) all(!rows$acts_on_nonprotein | rows$dual_protein_nonprotein)),
     list(label = "Hexokinase-family genes are not protein kinases",
          in_family = uniprot_family_is("hexokinase") |
                      kinases_table$hgnc_symbol %in% c("HK1", "HK2", "HK3", "HKDC1", "GCK"),

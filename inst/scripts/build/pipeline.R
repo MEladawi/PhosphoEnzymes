@@ -71,8 +71,14 @@ build_kinase_list <- function(refresh_data    = TRUE,
     message("Reading HGNC complete set ...")
     hgnc_bridge <- build_hgnc_bridge(path_for("hgnc_complete_set"))
 
+    # Resolve the curated EC/GO term sets against the pinned GMT: the kinase matchers drive both the
+    # GO functional sets and the substrate flags in the gate, so the build and the term_sets= accessor
+    # override share one code path.
+    term_sets     <- load_term_sets(data_in_dir)
+    resolved      <- resolve_term_sets(term_sets, path_for("go_mf_genesets"))
+
     message("Loading sources ...")
-    go_sets           <- load_go_functional_sets(path_for("go_mf_genesets"))
+    go_sets           <- load_go_functional_sets(path_for("go_mf_genesets"), resolved$kinase)
     # Experimental-GO proxy for the evidence tier: membership in the NO-IEA GO kinase-activity
     # set (non-electronic annotations only). Loaded from the no-IEA GMT separately from whichever
     # GO variant feeds the gate, so the signal is available either way (file-level proxy).
@@ -110,6 +116,7 @@ build_kinase_list <- function(refresh_data    = TRUE,
     message("Classifying and assembling ...")
     kinases_table <- classify_kinases(universe_ensembl_ids, hgnc_bridge, go_sets,
                                       ec_source, membership, kinase_taxonomy,
+                                      resolved$kinase,
                                       go_experimental_ids = go_experimental_ids,
                                       pseudokinase_ensembl_ids = pseudokinase_ensembl_ids)
 

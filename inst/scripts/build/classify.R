@@ -1,17 +1,23 @@
 # helper_code/classify.R
-# Per-gene classification by enzymatic function (the protein-kinase gate) and assembly of
-# the master table with one binary membership column per source. A single dplyr pipeline
-# over the universe: source/GO membership is added by tidy joins (not %in%), then the gate
-# and derived columns are computed column-wise.
+# Per-gene classification by enzymatic function (the kinase gate) and assembly of the master
+# table with one binary membership column per source. RIGOR is scored substrate-blind -- a gene
+# stands in Axis 2 when it carries ANY class EC (protein or non-protein), the kinase EC subclasses
+# -- and SUBSTRATE is typed by the four co-equal flags (GO protein / GO non-protein / EC protein /
+# EC non-protein) with NO lineage default: a sequence-family catalog tells you the gene is a kinase,
+# never which substrate it phosphorylates. The substrate flags + tiering both come from the single
+# shared apply_term_sets() path, so the build gate and the accessor term_sets= override agree.
 #
 #   universe_ensembl_ids : sorted union of all membership legs
 #   hgnc_bridge          : provides $gene_metadata (metadata also rides along in ec$ec_table)
-#   go_sets              : load_go_functional_sets() output (protein gate + non-protein classes)
-#   ec                   : load_ec_kinome() output; $ec_table already carries all gene metadata
+#   go_sets              : load_go_functional_sets() output -- kinase_activity_umbrella,
+#                          protein_kinase_activity, nonprotein_all, nonprotein_by_subtype
+#   ec                   : load_ec_kinome() output; $ec_table carries gene metadata + all_ec_codes
 #   membership           : named list of per-source Ensembl vectors
 #   taxonomy             : build_kinase_taxonomy() output (group/family/subfamily maps)
+#   resolved_kinase      : resolve_term_sets()$kinase -- the resolved EC/GO matchers
 
 classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, membership, taxonomy,
+                             resolved_kinase,
                              go_experimental_ids = character(0),
                              pseudokinase_ensembl_ids = character(0)) {
   noncatalytic_pattern <- regex(
@@ -28,7 +34,16 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       select(-present_in_set)
   }
 
-  ec$ec_table |>
+  # Per-gene non-protein GO subtype: pipe-joined names of the nonprotein_by_subtype sublists whose
+  # id-vector contains the gene (empty string if none). Drives nonprotein_substrate_type in
+  # apply_term_sets() alongside the EC subtype.
+  np_subtype_of <- function(id) {
+    hits <- names(go_sets$nonprotein_by_subtype)[
+      map_lgl(go_sets$nonprotein_by_subtype, \(ids) id %in% ids)]
+    paste(hits, collapse = "|")
+  }
+
+  classified <- ec$ec_table |>
     semi_join(tibble(ensembl_gene_id = universe_ensembl_ids), by = join_by(ensembl_gene_id)) |>
     # one binary membership column per source
     add_set_flag(membership$pkinfam,         is_pkinfam) |>
@@ -38,138 +53,63 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
     # is_ec_kinase already exists as a column in ec$ec_table (== membership$ec), so reuse it.
     add_set_flag(membership$uniprot_keyword, is_uniprot_kw_kinase) |>
     add_set_flag(membership$idg_dark,        is_idg_dark_kinase) |>
-    # GO functional sets used by the gate
-    add_set_flag(go_sets$protein_kinase_activity,   in_protein_kinase_go) |>
-    add_set_flag(go_sets$lipid_kinase,              in_lipid) |>
-    add_set_flag(go_sets$inositol_phosphate_kinase, in_inositol) |>
-    add_set_flag(go_sets$carbohydrate_kinase,       in_carbohydrate) |>
-    add_set_flag(go_sets$nucleotide_kinase,         in_nucleotide) |>
-    add_set_flag(go_sets$creatine_kinase,           in_creatine) |>
+    # GO functional sets used by the substrate flags.
+    add_set_flag(go_sets$protein_kinase_activity, in_protein_kinase_go) |>
+    add_set_flag(go_sets$nonprotein_all,          in_nonprotein_go) |>
     # Provenance proxy: non-electronic (experimental/curated) GO kinase-activity support.
-    add_set_flag(go_experimental_ids,               go_experimental) |>
+    add_set_flag(go_experimental_ids,             go_experimental) |>
     mutate(
       n_membership_sources = is_pkinfam + is_manning + is_kinhub + is_go_kinase_activity +
                              is_ec_kinase + is_uniprot_kw_kinase + is_idg_dark_kinase,
 
-      # Evidence dimensions: the rigor metric counts distinct KINDS of confirmation, not
-      # databases. Exactly two evidence classes answer genuinely different questions:
-      #   Axis 1 -- structural/evolutionary catalog: does the gene carry the kinase sequence
-      #             family? pkinfam / Manning / KinHub all answer this from overlapping
-      #             scholarship, so they roll up into ONE dimension -- counting them separately
-      #             would inflate correlated agreement (the database-fame artifact that also
-      #             demotes GO / UniProt).
-      #   Axis 2 -- biochemical: a protein-specific EC (2.7.10-14) proving protein-directed
-      #             catalysis. Non-protein EC still types substrate below but never scores here.
-      # The two are distinct in kind, not statistically independent (catalogs and EC share a
-      # literature ecosystem). dimensions == 2 means structure AND biochemistry both confirm a
-      # bona fide protein kinase (what "Gold" certifies) -- a claim about the enzyme-class call,
-      # not the substrate call.
-      in_structural_catalog       = is_pkinfam | is_manning | is_kinhub,
-      n_evidence_dimensions = as.integer(in_structural_catalog) +
-                                    as.integer(is_protein_kinase_ec),
-      # curated_core = standing in at least one evidence dimension (a structural catalog or a
-      # protein-EC number). The comprehensive-only remainder (GO/UniProt/IDG-only) is
-      # curated_core FALSE and tiers as Provisional; this is the strict-mode population.
-      curated_core = n_evidence_dimensions >= 1L,
-      # Supplementary support: experimental GO support OR the reviewed UniProt kinase keyword.
-      # Neither counts toward the axes; together they split Silver from Bronze among single-axis
-      # genes. It cannot manufacture standing from zero axes -- a zero-axis gene stays Provisional.
+      # Axis 1 -- structural/evolutionary sequence-family catalog: does the gene carry the kinase
+      # sequence family? pkinfam / Manning / KinHub answer this from overlapping scholarship, so they
+      # roll up into ONE dimension (counting them separately would inflate correlated agreement). The
+      # complementary Axis 2 (biochemical EC) is computed substrate-blind inside apply_term_sets().
+      in_structural_catalog = is_pkinfam | is_manning | is_kinhub,
+      # Supplementary support: experimental GO support OR the reviewed UniProt kinase keyword. Neither
+      # is an axis; together they split Silver from Bronze among single-axis genes and cannot
+      # manufacture standing from zero axes.
       supplementary_support = go_experimental | is_uniprot_kw_kinase,
-
-      # First matching non-protein functional class (priority order), else NA.
-      nonprotein_class = case_when(
-        in_lipid        ~ "Lipid kinase",
-        in_inositol     ~ "Inositol-phosphate kinase",
-        in_carbohydrate ~ "Carbohydrate/sugar kinase",
-        in_nucleotide   ~ "Nucleotide/nucleoside kinase",
-        in_creatine     ~ "Creatine kinase",
-        .default        = NA_character_),
-      protein_kinase_evidence = in_protein_kinase_go | is_pkinfam | is_manning | is_kinhub |
-                                is_protein_kinase_ec,
-      # A non-protein class wins unless the gene carries protein-kinase activity GO -- the
-      # substrate-accurate signal. The override keys on GO only, never on protein-EC: EC is valid
-      # rigor evidence (Axis 2) but is promiscuously assigned across substrate classes, so it
-      # cannot be a clean substrate authority (symmetric with the phosphatase gate). Catalog
-      # membership (pkinfam/Manning/KinHub, which lump PI3/PI4) is lineage, never an override.
-      # The reverse GO canaries (a pure lipid kinase like PI4KA must not carry protein-kinase GO)
-      # guard against an electronic mis-annotation flipping a non-protein enzyme to protein.
-      nonprotein_wins = !is.na(nonprotein_class) & !in_protein_kinase_go,
-      protein_kinase  = !nonprotein_wins & protein_kinase_evidence,
-      # EC-subclass fallback type (checking a code within each gene's EC subclass list).
-      ec_fallback_type = case_when(
-        map_lgl(ec_subclasses, \(x) "2.7.3" %in% x) ~ "Creatine/phosphagen kinase",
-        map_lgl(ec_subclasses, \(x) "2.7.4" %in% x) ~ "Nucleotide kinase",
-        map_lgl(ec_subclasses, \(x) "2.7.6" %in% x) ~ "Diphosphokinase",
-        map_lgl(ec_subclasses, \(x) "2.7.2" %in% x) ~ "Carboxyl-group kinase",
-        map_lgl(ec_subclasses, \(x) "2.7.1" %in% x) ~ "Small-molecule kinase (EC 2.7.1)",
-        map_lgl(ec_subclasses, \(x) "2.7.9" %in% x) ~ "Dikinase (EC 2.7.9)",
-        .default                                    = "Other/unclassified kinase"),
-      kinase_type = case_when(
-        nonprotein_wins ~ nonprotein_class,
-        protein_kinase  ~ "Protein kinase",
-        .default        = ec_fallback_type),
-
-      # Substrate as co-equal columns: acts_on_protein (= protein_kinase, below) plus a
-      # pipe-delimited nonprotein_substrate_type (empty = protein-only). The non-protein label
-      # comes from the GO class for a dual gene (protein kinase that also has a non-protein
-      # activity) and from the final type for a non-protein gene. Soluble inositol phosphates,
-      # creatine, and the EC-fallback labels collapse to "other"; the granular label is kept in
-      # substrate_subtype. By construction any gene with a non-protein class populates this, so
-      # acts_on_nonprotein (= nzchar) and the enum can never disagree.
-      nonprotein_substrate_label = if_else(protein_kinase, nonprotein_class, kinase_type),
-      nonprotein_substrate_type = case_when(
-        nonprotein_substrate_label == "Lipid kinase"                          ~ "lipid",
-        nonprotein_substrate_label == "Carbohydrate/sugar kinase"             ~ "carbohydrate",
-        nonprotein_substrate_label %in% c("Nucleotide/nucleoside kinase",
-                                          "Nucleotide kinase")                ~ "nucleotide",
-        is.na(nonprotein_substrate_label) |
-          nonprotein_substrate_label == "Protein kinase"                      ~ "",
-        .default                                                              = "other"),
-      acts_on_nonprotein = nzchar(nonprotein_substrate_type),
-
-      # Human-readable rationale for the substrate call -- the gate decision in words.
-      protein_evidence_label = case_when(
-        in_structural_catalog & is_protein_kinase_ec & in_protein_kinase_go ~ "structural catalog + protein-EC + GO",
-        in_structural_catalog & is_protein_kinase_ec                        ~ "structural catalog + protein-EC",
-        in_structural_catalog & in_protein_kinase_go                        ~ "structural catalog + GO",
-        is_protein_kinase_ec  & in_protein_kinase_go                        ~ "protein-EC + GO",
-        in_structural_catalog                                              ~ "structural catalog",
-        is_protein_kinase_ec                                               ~ "protein-EC",
-        in_protein_kinase_go                                               ~ "GO protein-kinase activity",
-        .default                                                           = "lineage evidence"),
-      classification_reason = case_when(
-        nonprotein_wins ~ str_c(nonprotein_class, ": non-protein substrate; no protein-kinase GO or protein-EC"),
-        protein_kinase  ~ str_c("protein kinase: ", protein_evidence_label),
-        .default        = str_c(ec_fallback_type, ": EC-subclass fallback; no protein or non-protein GO evidence")),
-
-      acts_on_protein = protein_kinase,
-      dual_protein_nonprotein = acts_on_protein & acts_on_nonprotein,
+      # Coarse proxy for experimental GO support of the substrate call. The substrate_decider field
+      # it feeds is informational, not gating -- it records HOW the call was made, never changes it.
+      go_experimental_protein = go_experimental,
       # catalytic_status from the curated pseudokinase set (lineage TRUE, catalytically dead);
-      # everything else defaults to active. A SOFT signal (a pseudokinase may retain a legacy EC
-      # and even reach Gold) -- never a veto. is_catalytic_background is the documented default
-      # enrichment denominator: active AND curated_core (excludes pseudoenzymes and 0-axis genes).
+      # everything else defaults to active. A SOFT signal, never a veto.
       catalytic_status = if_else(ensembl_gene_id %in% pseudokinase_ensembl_ids, "pseudo", "active"),
-      is_catalytic_background = catalytic_status == "active" & curated_core,
-      # membership_basis: the deriving source of the Axis-1 (structural-catalog) call, anchored on
-      # the cleanly-licensed leg first (pkinfam CC-BY), then the reconstructed Manning facts, then
-      # KinHub as a cross-check; NA when the gene is in no structural catalog.
-      membership_basis = case_when(
-        is_pkinfam ~ "reconstructed:pkinfam",
-        is_manning ~ "reconstructed:kinase.com",
-        is_kinhub  ~ "crosscheck:KinHub",
-        .default   = NA_character_),
-      # evidence_tier: a documented PRIORITIZATION HEURISTIC over the two axes plus
-      # supplementary support -- NOT a probability, evidence count, or confidence score. Gold
-      # requires BOTH axes (structure and biochemistry agree); Silver/Bronze split the one-axis
-      # genes by supplementary_support (experimental GO or reviewed UniProt keyword); Provisional
-      # is the comprehensive-only remainder. GO / keyword never reach Gold by design -- they share
-      # literature provenance with the catalogs, so admitting them would reintroduce the coupling
-      # the axis count exists to exclude.
-      evidence_tier = case_when(
-        n_evidence_dimensions == 2L                         ~ "Gold",
-        n_evidence_dimensions == 1L & supplementary_support ~ "Silver",
-        n_evidence_dimensions == 1L                         ~ "Bronze",
-        .default                                                  = "Provisional"),
+
+      # Per-gene evidence inputs for apply_term_sets(): the four co-equal substrate signals.
+      go_protein            = in_protein_kinase_go,
+      go_nonprotein         = in_nonprotein_go,
+      go_nonprotein_subtype = map_chr(ensembl_gene_id, np_subtype_of),
+      chen_nonprotein       = FALSE)   # kinases have no Chen flag
+
+  # The shared term-set path: EC axis flags (rigor substrate-blind), the four substrate flags, the
+  # substrate call + provenance, the rigor tier, and the enrichment backgrounds. Binds its columns
+  # back onto the classified table.
+  classified <- apply_term_sets(classified, resolved_kinase)
+
+  classified |>
+    mutate(
+      # BACK-COMPAT: the rest of the pipeline reads these names.
+      protein_kinase        = acts_on_protein,
+      is_protein_kinase_ec  = ec_protein,
+      # kinase_type: protein/dual -> protein; otherwise the firing non-protein substrate subtype,
+      # in priority order; else a generic small-molecule label; else unclassified.
+      kinase_type = case_when(
+        substrate_call %in% c("protein", "dual")              ~ "Protein kinase",
+        str_detect(nonprotein_substrate_type, "lipid")        ~ "Lipid kinase",
+        str_detect(nonprotein_substrate_type, "carbohydrate") ~ "Carbohydrate/sugar kinase",
+        str_detect(nonprotein_substrate_type, "nucleotide")   ~ "Nucleotide/nucleoside kinase",
+        str_detect(nonprotein_substrate_type, "metabolite")   ~ "Metabolite kinase",
+        acts_on_nonprotein                                    ~ "Other small-molecule kinase",
+        .default                                              = "Unclassified kinase"),
+      classification_reason = case_when(
+        substrate_call %in% c("protein", "dual") ~ str_c("protein kinase: substrate evidence ", substrate_evidence),
+        acts_on_nonprotein                       ~ str_c(kinase_type, ": non-protein substrate (",
+                                                         nonprotein_substrate_type, ")"),
+        .default                                 = "in a kinase set but no protein or non-protein substrate evidence"),
+
       is_pseudogene = str_detect(coalesce(locus_type, ""), regex("pseudogene", ignore_case = TRUE)),
       ec_kinase_subclass = map_chr(matched_kinase_subclasses, \(x) paste(x, collapse = ", ")),
       # Manning taxonomy (named-vector maps keyed by Ensembl ID); NA where absent.
@@ -177,14 +117,21 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       kinase_family          = unname(taxonomy$family[ensembl_gene_id]),
       kinase_subfamily       = unname(taxonomy$subfamily[ensembl_gene_id]),
       uniprot_protein_family = unname(taxonomy$uniprot_family_raw[ensembl_gene_id]),
-      # Fallback family descriptor for genes with no Manning kinase_family (typically
-      # UniProt/GO-only atypical kinases). NON-Manning: the UniProt parsed family tier
-      # (built once by parse_uniprot_protein_family via build_kinase_taxonomy), else the GO
-      # functional class. Blank where a Manning kinase_family exists.
+      # Fallback family descriptor for genes with no Manning kinase_family (typically UniProt/GO-only
+      # atypical kinases): the UniProt parsed family tier, else the firing non-protein substrate type.
       derived_family = if_else(
         !is.na(kinase_family) & kinase_family != "",
         NA_character_,
-        coalesce(unname(taxonomy$uniprot_family_tier[ensembl_gene_id]), nonprotein_class)),
+        coalesce(unname(taxonomy$uniprot_family_tier[ensembl_gene_id]),
+                 na_if(nonprotein_substrate_type, ""))),
+      # membership_basis: the deriving source of the Axis-1 (structural-catalog) call, anchored on the
+      # cleanly-licensed leg first (pkinfam CC-BY), then the reconstructed Manning facts, then KinHub
+      # as a cross-check; NA when the gene is in no structural catalog.
+      membership_basis = case_when(
+        is_pkinfam ~ "reconstructed:pkinfam",
+        is_manning ~ "reconstructed:kinase.com",
+        is_kinhub  ~ "crosscheck:KinHub",
+        .default   = NA_character_),
       hgnc_kinase_gene_group = map_lgl(gene_group, \(group_field) {
         terms <- split_pipe_delimited(group_field)
         any(str_detect(terms, regex("kinase", ignore_case = TRUE)) & !str_detect(terms, noncatalytic_pattern))
@@ -195,7 +142,9 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       hgnc_symbol = symbol, hgnc_id, gene_name = name,
       kinase_type, protein_kinase,
       acts_on_protein, acts_on_nonprotein, nonprotein_substrate_type,
-      catalytic_status, is_catalytic_background,
+      substrate_call, substrate_evidence, substrate_concordance, substrate_decider,
+      ec_protein, ec_nonprotein, go_protein, go_nonprotein,
+      catalytic_status, is_catalytic_background, is_protein_catalytic_background,
       kinase_group, kinase_family, derived_family, kinase_subfamily, uniprot_protein_family,
       dual_protein_nonprotein, evidence_tier, n_evidence_dimensions,
       go_experimental, supplementary_support,
