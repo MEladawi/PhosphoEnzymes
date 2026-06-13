@@ -1,3 +1,24 @@
+# PhosphoEnzymes 0.99.1
+
+* Phosphoinositide phosphatases are now lipid-typed through the
+  `GO:0052866` (phosphatidylinositol phosphate phosphatase activity) parent,
+  whose ancestor-propagated subtree covers the whole class (myotubularins,
+  `INPP4A`/`INPP4B`, the lipid `INPP5` members, `OCRL`, `SYNJ1`/`SYNJ2`,
+  `SACM1L`, `FIG4`). Previously several of these carried the subtype-less
+  `other` label. `INPP5A` (a soluble Ins(1,4,5)P3 5-phosphatase) is correctly
+  excluded and stays non-lipid.
+* The obsolete term `GO:0004437` (retired in the ontology, zero annotations)
+  was removed from the phosphatase GO term set. `validate_term_set()` now
+  hard-errors on a pinned denylist of confirmed-obsolete GO ids, and the build
+  re-verifies every GO id's obsolescence against the live ontology on a source
+  refresh so the denylist cannot silently go stale (soft-depends on jsonlite).
+* The myotubularin family invariant is refined to catalytically active members;
+  the family pseudophosphatases (`MTMR9`/`MTMR10`/`MTMR11`/`MTMR12`,
+  `SBF1`/`SBF2`) are not lipid-typed.
+* New `regulates` / `regulatory_role` columns on the phosphatase master record
+  the adapter/activator relationships of the inactive myotubularins in place,
+  rather than relocating them out of the catalytic phosphatome.
+
 # PhosphoEnzymes 0.99.0
 
 * Initial skeleton.

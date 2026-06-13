@@ -33,6 +33,12 @@ any of "GO", "Chen", "EC".}
 \item{is_protein_catalytic_background}{Logical. The default protein-phosphatase enrichment
 background: \code{catalytic_status == "active"} AND \code{curated_core} AND \code{acts_on_protein}.}
 \item{is_pseudophosphatase}{Logical. Predicted catalytically dead (Chen 2017).}
+\item{regulates}{Pipe-delimited symbol(s) of the catalytic phosphatase(s) this gene
+regulates as an adapter/activator; NA for non-regulatory genes. Populated for the
+catalytically inactive myotubularins, which stay in the catalytic master as untyped
+phosphatome members rather than being relocated to a separate companion.}
+\item{regulatory_role}{Free-text description of the regulatory relationship and its
+primary citation; NA when \code{regulates} is NA.}
 \item{n_evidence_dimensions}{Integer. Count of distinct class-evidence kinds -- structural/
 sequence catalog and any class-specific EC -- confirming a bona fide enzyme of the class.
 Range 0-2, substrate-agnostic. Distinct in kind, not statistically independent.}

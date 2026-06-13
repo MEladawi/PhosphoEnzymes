@@ -3,7 +3,7 @@
 # They will go green on a structurally valid table even if the gate is wrong;
 # the biological correctness is guarded by test-trap-cases.R and test-invariants.R.
 
-ALLOWED_NONPROTEIN <- c("lipid", "nucleotide", "carbohydrate", "other")
+ALLOWED_NONPROTEIN <- c("lipid", "nucleotide", "carbohydrate", "metabolite", "other")
 ALLOWED_TIER       <- c("Gold", "Silver", "Bronze", "Provisional")
 
 REQUIRED_COLS <- c(

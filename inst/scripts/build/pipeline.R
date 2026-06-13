@@ -82,6 +82,15 @@ build_kinase_list <- function(refresh_data    = TRUE,
            paste(sprintf("  [%s] %s (%s): %s", term_set_issues$severity, term_set_issues$table,
                          term_set_issues$term_id, term_set_issues$message),
                  collapse = "\n"))
+    # On a source refresh (the moment a GO release can bump), re-resolve every GO term_id's
+    # obsolescence against the live ontology so the offline denylist cannot quietly go stale.
+    if (isTRUE(refresh_data)) {
+      newly_obsolete <- check_go_term_obsolescence(term_sets)
+      if (nrow(newly_obsolete))
+        warning("GO term(s) newly obsolete in the current release -- add to TERM_SET_OBSOLETE_GO ",
+                "+ NEWS and remove/replace in the CSV:\n",
+                paste(sprintf("  %s (%s)", newly_obsolete$term_id, newly_obsolete$name), collapse = "\n"))
+    }
 
     message("Loading sources ...")
     go_sets           <- load_go_functional_sets(path_for("go_mf_genesets"), resolved$kinase)
@@ -183,6 +192,15 @@ build_phosphatase_list <- function(refresh_data    = TRUE,
            paste(sprintf("  [%s] %s (%s): %s", term_set_issues$severity, term_set_issues$table,
                          term_set_issues$term_id, term_set_issues$message),
                  collapse = "\n"))
+    # On a source refresh (the moment a GO release can bump), re-resolve every GO term_id's
+    # obsolescence against the live ontology so the offline denylist cannot quietly go stale.
+    if (isTRUE(refresh_data)) {
+      newly_obsolete <- check_go_term_obsolescence(term_sets)
+      if (nrow(newly_obsolete))
+        warning("GO term(s) newly obsolete in the current release -- add to TERM_SET_OBSOLETE_GO ",
+                "+ NEWS and remove/replace in the CSV:\n",
+                paste(sprintf("  %s (%s)", newly_obsolete$term_id, newly_obsolete$name), collapse = "\n"))
+    }
 
     message("Loading phosphatase sources ...")
     go_phosphatase_sets <- load_go_phosphatase_sets(path_for("go_mf_genesets"), resolved$phosphatase)

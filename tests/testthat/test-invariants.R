@@ -5,18 +5,26 @@
 # over a family rather than asserting individual canonical status. These catch
 # whole-class regressions a single-gene test would miss.
 
-test_that("every catalytically active myotubularin is a lipid phosphatase", {
-  # The MTM/MTMR family are PTP-fold but act on phosphoinositides (lipids). Several
-  # (MTM1, MTMR3/4/6/7/14) additionally dephosphorylate proteins (Chen 2017), so the
-  # invariant is dual-aware: every active member must act on lipid (none is a PURE
-  # protein phosphatase), mirroring the dual-aware DGK kinase invariant. The family's
-  # pseudophosphatases (MTMR9/10/11/12, SBF1/SBF2) are catalytically dead and carry no
-  # substrate, so they are excluded -- typing them lipid would be an unsupported
-  # lineage default, which the substrate-blind gate deliberately does not make.
+test_that("myotubularins split by catalytic status: active are lipid, pseudo are untyped", {
+  # The MTM/MTMR family are PTP-fold but act on phosphoinositides (lipids). The invariant
+  # is expressed over the family + its catalytic status (never a hardcoded gene list), so
+  # it tracks the source facts rather than a frozen roster:
+  #  - Catalytically active members act on lipid. Several (MTM1, MTMR3/4/6/7/14)
+  #    additionally dephosphorylate proteins (Chen 2017), so the assertion is dual-aware:
+  #    every active member acts on lipid (none is a PURE protein phosphatase), mirroring
+  #    the dual-aware DGK kinase invariant.
+  #  - The pseudophosphatases (MTMR9/10/11/12, SBF1/SBF2) are catalytically dead, so none is
+  #    a lipid phosphatase: the substrate-blind gate never assigns them the lipid substrate
+  #    by lineage default. (Their protein axis can still carry a homology-propagated electronic
+  #    GO term -- SBF1 does -- which is quarantined into the Provisional tier elsewhere, not a
+  #    claim of catalytic activity; their adapter roles are annotated via regulates/regulatory_role.)
   p <- pe_phosphat()
-  fam <- p[p$symbol %in% PE_MTM_FAMILY & !p$is_pseudophosphatase, , drop = FALSE]
-  skip_if(nrow(fam) == 0L, "no active MTM-family members present")
-  expect_true(all(fam$acts_on_nonprotein & grepl("lipid", fam$nonprotein_substrate_type)))
+  mtm <- p[p$phosphatase_family %in% "Myotubularin", , drop = FALSE]
+  skip_if(nrow(mtm) == 0L, "no myotubularin-family members present")
+  active <- mtm[!mtm$is_pseudophosphatase, , drop = FALSE]
+  pseudo <- mtm[mtm$is_pseudophosphatase, , drop = FALSE]
+  expect_true(all(active$acts_on_nonprotein & grepl("lipid", active$nonprotein_substrate_type)))
+  expect_false(any(pseudo$acts_on_nonprotein))
 })
 
 # Kinase-side family invariants (the mirror of the MTM phosphatase invariant).

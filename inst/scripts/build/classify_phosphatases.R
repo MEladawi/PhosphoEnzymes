@@ -16,6 +16,19 @@
 #   chen_facts           : load_chen_phosphatome()$facts_table -- taxonomy + substrate flags + status
 #   resolved_phosphatase : resolve_term_sets()$phosphatase -- the resolved EC/GO matchers
 
+# Curated regulatory roles for the catalytically inactive myotubularins. These pseudophosphatases
+# stay in the catalytic master as untyped phosphatome members (Chen includes them); their biology is
+# that of an adapter/activator of an ACTIVE myotubularin, recorded here as an annotation ON the gene
+# rather than relocated to the regulatory-subunit companion (which holds only genes disjoint from the
+# catalytic master). `regulates` is the pipe-joined target symbol(s); `regulatory_role` carries the
+# role and its primary citation. Uncharacterised pseudophosphatases (MTMR10, MTMR11) are left blank.
+PHOSPHATASE_REGULATORY_ROLES <- tibble::tribble(
+  ~symbol,  ~regulates,             ~regulatory_role,
+  "SBF1",   "MTMR2",                "activator of the active phosphatase MTMR2 (catalytically inactive partner; Kim et al. PNAS 2003, 10.1073/pnas.0431052100)",
+  "SBF2",   "MTMR2",                "activator of MTMR2 (Robinson & Dixon, Berger et al. Hum Mol Genet 2006)",
+  "MTMR12", "MTMR2",                "adapter subunit (3-PAP) of the MTMR2 lipid phosphatase (Nandurkar et al. PNAS 2003)",
+  "MTMR9",  "MTMR6|MTMR7|MTMR8",    "activator/adapter of the MTMR6/7/8 lipid phosphatases (Zou et al. J Biol Chem 2009)")
+
 classify_phosphatases <- function(universe_ensembl_ids, hgnc_bridge, go_phosphatase_sets, ec_phosphatase,
                                   membership, chen_facts, resolved_phosphatase,
                                   go_experimental_ids = character(0)) {
@@ -124,6 +137,10 @@ classify_phosphatases <- function(universe_ensembl_ids, hgnc_bridge, go_phosphat
         is_chen                   ~ "reconstructed:Chen2017",
         is_hgnc_phosphatase_group ~ "reconstructed:HGNC_groups",
         .default                  = NA_character_)) |>
+    # Annotate the inactive-myotubularin adapters with their regulatory target + role.
+    left_join(PHOSPHATASE_REGULATORY_ROLES, by = join_by(symbol)) |>
+    mutate(regulates       = coalesce(regulates, NA_character_),
+           regulatory_role = coalesce(regulatory_role, NA_character_)) |>
     # Final column set and order (drops all intermediate flag/gate columns).
     transmute(
       ensembl_gene_id,
@@ -134,6 +151,7 @@ classify_phosphatases <- function(universe_ensembl_ids, hgnc_bridge, go_phosphat
       ec_protein, ec_nonprotein, go_protein, go_nonprotein,
       dual_protein_nonprotein,
       catalytic_status, is_catalytic_background, is_protein_catalytic_background, is_pseudophosphatase,
+      regulates, regulatory_role,
       n_evidence_dimensions, evidence_tier, curated_core,
       in_structural_catalog, is_protein_phosphatase_ec,
       go_experimental, has_uniprot_kw, supplementary_support, membership_basis,

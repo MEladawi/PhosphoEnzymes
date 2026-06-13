@@ -90,6 +90,8 @@ validate_term_set <- function(term_sets, resolved = NULL,
     umb <- filter(tbl, role == "rigor_umbrella")
     bad_umb <- umb$term_id[umb$substrate != "na"]
     for (t in bad_umb) add("error", nm, t, "umbrella row must have substrate == na")
+    obsolete_hits <- intersect(tbl$term_id, TERM_SET_OBSOLETE_GO)
+    for (t in obsolete_hits) add("error", nm, t, "obsolete GO term_id (retired in the ontology; remove or replace with its successor)")
   }
   for (nm in names(term_sets$tables)) {
     tbl <- filter(term_sets$tables[[nm]], role == "rigor+substrate")
@@ -125,6 +127,42 @@ validate_term_set <- function(term_sets, resolved = NULL,
 TERM_SET_REVERSE_CANARIES <- list(
   list(class = "kinase",      symbol = "PI4KA", ensembl = "ENSG00000241973"),
   list(class = "phosphatase", symbol = "PSPH",  ensembl = "ENSG00000146733"))
+
+# GO term_ids verified obsolete in the pinned ontology release (QuickGO `isObsolete == true`). A
+# retired term silently resolves to an empty gene set, so it must never sit in a term set: the
+# validator hard-errors on any of these (distinct from a valid-but-unannotated term, which only
+# warns). Extend only with IDs confirmed obsolete against the pinned release, never on a hunch.
+TERM_SET_OBSOLETE_GO <- c(
+  "GO:0004437"  # obsolete "inositol or phosphatidylinositol phosphatase activity"; no successor
+)
+
+# Re-verify every GO term_id against the live ontology (QuickGO). The pinned TERM_SET_OBSOLETE_GO
+# denylist is the fast offline gate that always runs in validate_term_set(); this is its slow online
+# companion, meant to run on a source refresh / GO-release bump so the denylist cannot silently go
+# stale. Returns the term_ids that are obsolete in the live release but not yet on the denylist --
+# each must then be added to the denylist + NEWS and removed/replaced in the CSV. Soft-depends on
+# jsonlite and degrades to an empty result (with a warning) when the package or network is absent.
+check_go_term_obsolescence <- function(term_sets, known_obsolete = TERM_SET_OBSOLETE_GO) {
+  empty <- tibble(term_id = character(), name = character())
+  if (!requireNamespace("jsonlite", quietly = TRUE)) {
+    warning("GO obsolescence re-check skipped: jsonlite not installed")
+    return(empty)
+  }
+  go_ids <- term_sets$tables |> map(\(t) t$term_id) |> list_c() |> unique()
+  go_ids <- go_ids[str_starts(go_ids, "GO:")]
+  if (!length(go_ids)) return(empty)
+  endpoint <- paste0("https://www.ebi.ac.uk/QuickGO/services/ontology/go/terms/",
+                     paste(go_ids, collapse = ","))
+  res <- tryCatch(jsonlite::fromJSON(endpoint, simplifyDataFrame = FALSE), error = \(e) NULL)
+  if (is.null(res) || is.null(res$results)) {
+    warning("GO obsolescence re-check skipped: QuickGO unreachable")
+    return(empty)
+  }
+  newly <- res$results |>
+    keep(\(r) isTRUE(r$isObsolete) && !(r$id %in% known_obsolete))
+  tibble(term_id = map_chr(newly, "id"),
+         name    = map_chr(newly, \(r) r$name %||% NA_character_))
+}
 
 # Per-gene EC axis flags against a resolved class. Returns the rigor flag (E), the protein and
 # nonprotein flags, and the firing nonprotein substrate subtype(s).

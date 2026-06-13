@@ -8,9 +8,8 @@ GO:0101006,phosphatase,protein,,rigor+substrate,exact,AmiGO,"protein histidine p
 GO:0033549,phosphatase,protein,,rigor+substrate,subtree,AmiGO,"MAP kinase phosphatase activity (spans GO:0017017, GO:1990439, GO:0008579)"
 GO:0016314,phosphatase,nonprotein,lipid,rigor+substrate,exact,AmiGO; xref EC 3.1.3.67,PIP3 3-phosphatase activity (PTEN)
 GO:0034595,phosphatase,nonprotein,lipid,rigor+substrate,exact,AmiGO,phosphatidylinositol-phosphate phosphatase activity
-GO:0004437,phosphatase,nonprotein,lipid,rigor+substrate,exact,AmiGO,inositol/phosphatidylinositol phosphatase activity
 GO:0008195,phosphatase,nonprotein,lipid,rigor+substrate,exact,AmiGO; xref EC 3.1.3.4,phosphatidate phosphatase activity
-GO:0052866,phosphatase,nonprotein,lipid,rigor+substrate,subtree,AmiGO; Taylor Maehama Dixon PNAS 2000,phosphatidylinositol-phosphate phosphatase activity (phosphoinositide-phosphatase parent; captures the myotubularin / INPP4 / Sac / synaptojanin / OCRL lipid families through GO propagation)
+GO:0052866,phosphatase,nonprotein,lipid,rigor+substrate,subtree,AmiGO; xref EC 3.1.3.64/.36/.86,phosphatidylinositol phosphate phosphatase activity (phosphoinositide-phosphatase class parent; subtree covers myotubularins/INPP4-5/OCRL/SYNJ/SACM1L/FIG4)
 GO:0008253,phosphatase,nonprotein,nucleotide,rigor+substrate,exact,AmiGO; xref EC 3.1.3.5,5'-nucleotidase activity
 GO:0004035,phosphatase,nonprotein,other,rigor+substrate,exact,AmiGO; xref EC 3.1.3.1,alkaline phosphatase activity
 GO:0003993,phosphatase,nonprotein,other,rigor+substrate,exact,AmiGO; xref EC 3.1.3.2,acid phosphatase activity

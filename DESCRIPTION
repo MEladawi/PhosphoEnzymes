@@ -1,6 +1,6 @@
 Package: PhosphoEnzymes
 Title: A Reproducible, Function-First Reference of Human Kinases and Phosphatases
-Version: 0.99.0
+Version: 0.99.1
 Authors@R:
     person(given = "Mahmoud", family = "Eladawi",
            role = c("aut", "cre"),
@@ -39,6 +39,7 @@ Suggests:
     readxl,
     hgnc,
     yaml,
+    jsonlite,
     usethis,
     pkgload
 biocViews:

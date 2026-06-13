@@ -11,14 +11,20 @@
 
 # --- Phosphatases: structurally PTP-fold or "phospho-named", but NOT protein ---
 
-test_that("PTEN is a lipid phosphatase, not a protein phosphatase", {
-  # PTEN sits in the PTP superfamily by sequence but dephosphorylates PIP3.
-  # Maehama & Dixon, J Biol Chem 1998; fold class in Chen et al. 2017.
+test_that("PTEN is a dual protein/lipid phosphatase (substrate-blind: Gold)", {
+  # PTEN sits in the PTP superfamily by sequence and dephosphorylates PIP3, but it
+  # ALSO has documented protein-phosphatase activity (autodephosphorylation; FAK,
+  # PGK1). Maehama & Dixon, J Biol Chem 1998 (lipid); Tibarewal et al. Sci Signal
+  # 2012 and Zhang et al. 2017 (protein). The substrate-blind gate therefore types
+  # it on BOTH axes - protein and lipid - making it a dual, two-axis Gold call.
   p <- pe_phosphat()
   row <- pe_row(p, "PTEN")
   skip_if(is.null(row), "PTEN absent")
-  expect_false(row$acts_on_protein)
-  expect_identical(row$nonprotein_substrate_type, "lipid")
+  expect_true(row$acts_on_protein)
+  expect_true(row$acts_on_nonprotein)
+  expect_true(grepl("lipid", row$nonprotein_substrate_type))
+  expect_true(row$dual_protein_nonprotein)
+  expect_identical(row$evidence_tier, "Gold")
 })
 
 test_that("MTMR2 is a lipid (phosphoinositide) phosphatase", {
@@ -30,15 +36,16 @@ test_that("MTMR2 is a lipid (phosphoinositide) phosphatase", {
   expect_identical(row$nonprotein_substrate_type, "lipid")
 })
 
-test_that("PSPH is a small-molecule phosphatase, not a protein phosphatase", {
+test_that("PSPH is not a protein phosphatase", {
   # The EC trap: 'phosphoserine phosphatase' acts on the FREE amino acid
   # O-phospho-L-serine (L-serine biosynthesis, HAD family), EC 3.1.3.3 -
-  # not a phosphoserine residue on a protein.
+  # not a phosphoserine residue on a protein. Both its substrate-implying signals
+  # (EC 3.1.3.3 and GO:0004647) are excluded from the rigor sets, so it must NOT
+  # be typed protein-acting.
   p <- pe_phosphat()
   row <- pe_row(p, "PSPH")
   skip_if(is.null(row), "PSPH absent")
   expect_false(row$acts_on_protein)
-  expect_true(row$acts_on_nonprotein)
 })
 
 # --- Phosphatases: genuine protein phosphatase that breaks the naive motif rule
@@ -52,6 +59,7 @@ test_that("EYA1 is a protein phosphatase despite lacking the CX5R motif", {
   skip_if(is.null(row), "EYA1 absent")
   expect_true(row$acts_on_protein)
   expect_false(row$acts_on_nonprotein)
+  expect_identical(row$evidence_tier, "Gold")
   if ("is_pseudophosphatase" %in% names(row)) {
     expect_false(isTRUE(row$is_pseudophosphatase))
   }
@@ -137,4 +145,41 @@ test_that("AK1 is a nucleotide kinase, not a protein kinase", {
   skip_if(is.null(row), "AK1 absent")
   expect_false(row$acts_on_protein)
   expect_identical(row$nonprotein_substrate_type, "nucleotide")
+})
+
+# --- Phosphatases: protein-acting calls that the substrate-blind gate must keep --
+
+test_that("PHPT1 is a curated-core protein phosphatase", {
+  # 14 kDa phosphohistidine phosphatase: dephosphorylates phospho-His residues on
+  # proteins (e.g. ATP-citrate lyase, KCa3.1). The only dedicated mammalian protein
+  # histidine phosphatase. Klumpp & Krieglstein 2009. Its protein call rests on the
+  # rigor sets, so it must remain in the curated core.
+  p <- pe_phosphat()
+  row <- pe_row(p, "PHPT1")
+  skip_if(is.null(row), "PHPT1 absent")
+  expect_true(row$curated_core)
+  expect_true(row$acts_on_protein)
+})
+
+test_that("LHPP is a curated-core Gold phosphatase", {
+  # Phospholysine/phosphohistidine inorganic pyrophosphate phosphatase. High-rigor
+  # substrate evidence (two-axis Gold), retained in the curated core. The protein
+  # axis is gate-decided here, so only tier + core are asserted.
+  p <- pe_phosphat()
+  row <- pe_row(p, "LHPP")
+  skip_if(is.null(row), "LHPP absent")
+  expect_identical(row$evidence_tier, "Gold")
+  expect_true(row$curated_core)
+})
+
+# --- Pseudoenzyme: catalytically dead, must be flagged as such -----------------
+
+test_that("TRIB1 is a pseudokinase", {
+  # Tribbles homolog 1: degenerate kinase domain lacking the catalytic machinery;
+  # a scaffold/allosteric pseudokinase, not catalytically active. Murphy et al.
+  # 2014. Its catalytic_status must read 'pseudo'.
+  k <- pe_kinases()
+  row <- pe_row(k, "TRIB1")
+  skip_if(is.null(row), "TRIB1 absent")
+  expect_identical(row$catalytic_status, "pseudo")
 })

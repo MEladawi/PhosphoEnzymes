@@ -202,6 +202,12 @@ validate_term_set <- function(term_sets = NULL) {
     # Umbrella rows must be substrate-agnostic.
     bad_umb <- tbl$term_id[tbl$role == "rigor_umbrella" & tbl$substrate != "na"]
     for (t in bad_umb) add("error", nm, t, "umbrella row must have substrate == na")
+    # GO term_ids verified obsolete in the pinned ontology (QuickGO isObsolete == true). A retired
+    # term resolves to an empty gene set, so it must never sit in a term set: hard error here,
+    # distinct from a valid-but-unannotated term. Extend only with confirmed-obsolete IDs.
+    obsolete_go <- c("GO:0004437")
+    for (t in intersect(tbl$term_id, obsolete_go))
+      add("error", nm, t, "obsolete GO term_id (retired in the ontology; remove or replace with its successor)")
     # No term_id may carry both protein and nonprotein among rigor+substrate rows.
     rig <- tbl[is_rig, , drop = FALSE]
     if (nrow(rig)) {

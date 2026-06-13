@@ -82,3 +82,45 @@ test_that("ec_axis_flags types protein vs nonprotein EC by the term set", {
   f_none <- ec_axis_flags("9.9.9.9", res$kinase)
   expect_false(f_none$ec_rigor); expect_false(f_none$ec_protein); expect_false(f_none$ec_nonprotein)
 })
+
+test_that("GO:0052866 descendant set is pinned (broad-parent drift tripwire)", {
+  # The phosphoinositide-phosphatase lipid subtype rides on this one broad subtree parent.
+  # A broad parent is safe only while bounded: a future GO release could silently add a
+  # non-lipid descendant to its propagated set without the term id changing. Pin the member
+  # set; on drift, confirm every new member is a genuine phosphoinositide phosphatase, then
+  # update this snapshot (and re-verify INPP5A is still excluded).
+  skip_if_not(file.exists("../../inst/extdata/go_mf_genesets_with_iea_ensembl.gmt"),
+              "GMT snapshot absent")
+  source("../../inst/scripts/build/utils.R", local = TRUE)
+  m <- read_gmt_accession_map("../../inst/extdata/go_mf_genesets_with_iea_ensembl.gmt")
+  members <- sort(unique(m[["GO:0052866"]]))
+  members <- members[nzchar(members)]
+  pinned <- c(
+    "ENSG00000003987", "ENSG00000040933", "ENSG00000063601", "ENSG00000078269",
+    "ENSG00000087053", "ENSG00000100330", "ENSG00000102043", "ENSG00000108389",
+    "ENSG00000109452", "ENSG00000110536", "ENSG00000112367", "ENSG00000115020",
+    "ENSG00000122126", "ENSG00000132376", "ENSG00000132958", "ENSG00000139505",
+    "ENSG00000148384", "ENSG00000155099", "ENSG00000159082", "ENSG00000163719",
+    "ENSG00000165458", "ENSG00000171100", "ENSG00000185133", "ENSG00000198825",
+    "ENSG00000204084", "ENSG00000211456", "ENSG00000274391", "ENSG00000281614",
+    "ENSG00000284792", "ENSG00000291802")
+  expect_setequal(members, pinned)
+})
+
+test_that("validate_term_set hard-errors on an obsolete GO term_id", {
+  source("../../inst/scripts/build/utils.R",     local = TRUE)
+  source("../../inst/scripts/build/term_sets.R", local = TRUE)
+  ts <- load_term_sets("../../inst/extdata")
+  # The shipped default set is clean (the obsolete GO:0004437 was removed).
+  expect_false(any(validate_term_set(ts)$severity == "error" &
+                     grepl("obsolete", validate_term_set(ts)$message)))
+  # Re-introduce the known-obsolete id; the denylist must fail it.
+  bad <- ts
+  bad$tables$phosphatase_go <- dplyr::bind_rows(
+    ts$tables$phosphatase_go,
+    dplyr::tibble(term_id = "GO:0004437", class = "phosphatase", substrate = "nonprotein",
+                  substrate_subtype = "lipid", role = "rigor+substrate", scope = "exact",
+                  citation = "AmiGO", note = "seeded obsolete term"))
+  issues <- validate_term_set(bad)
+  expect_true(any(issues$severity == "error" & grepl("obsolete", issues$message)))
+})
