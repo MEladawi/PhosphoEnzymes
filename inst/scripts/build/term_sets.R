@@ -134,3 +134,61 @@ ec_axis_flags <- function(gene_codes, resolved_class) {
     ec_nonprotein = matches_ec_rules(gene_codes, resolved_class$ec_nonprotein),
     nonprotein_subtypes = unique(fired_np[!is.na(fired_np) & fired_np != ""]))
 }
+
+# Compute every term-set-dependent column from per-gene evidence and a resolved class.
+# This is the single code path shared by the build gate and the accessor term_sets= override.
+apply_term_sets <- function(evidence, resolved_class) {
+  ec_flags <- map(evidence$all_ec_codes, \(codes) ec_axis_flags(codes, resolved_class))
+  evidence |> mutate(
+    ec_rigor      = map_lgl(ec_flags, "ec_rigor"),
+    ec_protein    = map_lgl(ec_flags, "ec_protein"),
+    ec_nonprotein = map_lgl(ec_flags, "ec_nonprotein"),
+    ec_nonprotein_subtype = map_chr(ec_flags, \(f) paste(f$nonprotein_subtypes, collapse = "|")),
+
+    # RIGOR (substrate-blind): L + E, where E = any class EC (protein or non-protein).
+    n_evidence_dimensions = as.integer(in_structural_catalog) + as.integer(ec_rigor),
+    curated_core = n_evidence_dimensions >= 1L,
+    evidence_tier = case_when(
+      n_evidence_dimensions == 2L                          ~ "Gold",
+      n_evidence_dimensions == 1L & supplementary_support  ~ "Silver",
+      n_evidence_dimensions == 1L                          ~ "Bronze",
+      .default                                             = "Provisional"),
+
+    # SUBSTRATE: co-equal flags; no lineage default.
+    acts_on_protein    = go_protein | ec_protein,
+    acts_on_nonprotein = go_nonprotein | ec_nonprotein | chen_nonprotein,
+    nonprotein_substrate_type = pmap_chr(
+      list(go_nonprotein_subtype, ec_nonprotein_subtype, acts_on_nonprotein),
+      \(go_st, ec_st, any_np) {
+        subs <- unique(c(split_pipe_delimited(go_st), split_pipe_delimited(ec_st)))
+        subs <- subs[nzchar(subs)]
+        if (!any_np) "" else if (length(subs)) paste(subs, collapse = "|") else "other"
+      }),
+    dual_protein_nonprotein = acts_on_protein & acts_on_nonprotein,
+    substrate_call = case_when(
+      acts_on_protein & acts_on_nonprotein ~ "dual",
+      acts_on_protein                      ~ "protein",
+      acts_on_nonprotein                   ~ "nonprotein",
+      .default                             = "untyped"),
+
+    # PROVENANCE.
+    substrate_evidence = pmap_chr(list(go_protein | go_nonprotein, chen_nonprotein, ec_protein | ec_nonprotein),
+      \(go, chen, ec) paste(c("GO","Chen","EC")[c(go, chen, ec)], collapse = "+")),
+    substrate_decider = case_when(
+      (go_protein | go_nonprotein) & go_experimental_protein ~ "GO-exp",
+      (go_protein | go_nonprotein)                           ~ "GO-elec",
+      chen_nonprotein                                        ~ "Chen-flag",
+      ec_protein | ec_nonprotein                             ~ "EC",
+      .default                                               = "precedence-default"),
+    substrate_concordance = pmap_chr(
+      list(go_protein, go_nonprotein, ec_protein, ec_nonprotein, chen_nonprotein, substrate_call),
+      \(gp, gn, ep, en, cn, call) {
+        if (call == "untyped") return("untyped")
+        n_sources <- sum(gp | gn, ep | en, cn)
+        if (n_sources <= 1) "single" else "concordant"
+      }),
+
+    # ENRICHMENT BACKGROUNDS.
+    is_catalytic_background         = catalytic_status == "active" & curated_core,
+    is_protein_catalytic_background = catalytic_status == "active" & curated_core & acts_on_protein)
+}
