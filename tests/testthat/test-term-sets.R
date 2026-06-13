@@ -85,3 +85,19 @@ test_that("term-set GO selection covers the frozen non-protein kinase panel", {
                 info = paste(sym, "should be in go_nonprotein_ids"))
   }
 })
+
+test_that("ec_axis_flags types protein vs nonprotein EC by the term set", {
+  source(build_file("utils.R"),     local = TRUE)
+  source(build_file("term_sets.R"), local = TRUE)
+  ts  <- load_term_sets(extdata_dir())
+  tmp <- tempfile(fileext = ".gmt"); writeLines("X%GOMF%GO:0004672\tna\tENSGP", tmp)
+  res <- resolve_term_sets(ts, tmp)
+  f_pi4ka <- ec_axis_flags("2.7.1.67", res$kinase)
+  expect_true(f_pi4ka$ec_rigor); expect_false(f_pi4ka$ec_protein); expect_true(f_pi4ka$ec_nonprotein)
+  expect_identical(f_pi4ka$nonprotein_subtypes, "lipid")
+  f_phpt1 <- ec_axis_flags("3.9.1.3", res$phosphatase)
+  expect_true(f_phpt1$ec_protein); expect_true(f_phpt1$ec_rigor)
+  # a code in no curated set fires nothing
+  f_none <- ec_axis_flags("9.9.9.9", res$kinase)
+  expect_false(f_none$ec_rigor); expect_false(f_none$ec_protein); expect_false(f_none$ec_nonprotein)
+})

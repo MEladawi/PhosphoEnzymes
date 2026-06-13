@@ -114,7 +114,8 @@ load_ec_phosphatome <- function(gene_metadata, uniprot_ec_table) {
       # "3.1.3.-" names no substrate and must not trigger a non-protein call) minus the two
       # protein needles, for substrate typing.
       nonprotein_phosphatase_ec = map(all_ec, ~ setdiff(
-        .x[str_detect(.x, "^3\\.1\\.3\\.[0-9]|^3\\.6\\.1\\.[0-9]")], PROTEIN_PHOSPHATASE_EC)))
+        .x[str_detect(.x, "^3\\.1\\.3\\.[0-9]|^3\\.6\\.1\\.[0-9]")], PROTEIN_PHOSPHATASE_EC)),
+      all_ec_codes = all_ec)
   list(
     ensembl_ids = ec_long |> filter(map_lgl(all_ec, ~ any(str_detect(.x, "^3\\.1\\.3\\.")))) |> pull(ensembl_gene_id),
     ec_table = ec_long)

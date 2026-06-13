@@ -119,3 +119,18 @@ validate_term_set <- function(term_sets, resolved = NULL,
 TERM_SET_REVERSE_CANARIES <- list(
   list(class = "kinase",      symbol = "PI4KA", ensembl = "ENSG00000241973"),
   list(class = "phosphatase", symbol = "PSPH",  ensembl = "ENSG00000146733"))
+
+# Per-gene EC axis flags against a resolved class. Returns the rigor flag (E), the protein and
+# nonprotein flags, and the firing nonprotein substrate subtype(s).
+ec_axis_flags <- function(gene_codes, resolved_class) {
+  np_rows <- resolved_class$ec_nonprotein
+  fired_np <- if (length(gene_codes) == 0 || nrow(np_rows) == 0) character(0) else {
+    np_rows$subtype[map_lgl(seq_len(nrow(np_rows)),
+      \(i) matches_ec_rules(gene_codes, np_rows[i, c("code", "scope")]))]
+  }
+  list(
+    ec_rigor      = matches_ec_rules(gene_codes, resolved_class$ec_rigor),
+    ec_protein    = matches_ec_rules(gene_codes, resolved_class$ec_protein),
+    ec_nonprotein = matches_ec_rules(gene_codes, resolved_class$ec_nonprotein),
+    nonprotein_subtypes = unique(fired_np[!is.na(fired_np) & fired_np != ""]))
+}
