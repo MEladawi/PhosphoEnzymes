@@ -165,8 +165,14 @@ build_phosphatase_list <- function(refresh_data    = TRUE,
     message("Reading HGNC complete set ...")
     hgnc_bridge <- build_hgnc_bridge(path_for("hgnc_complete_set"))
 
+    # Resolve the curated EC/GO term sets against the pinned GMT: the phosphatase matchers drive both
+    # the GO functional sets and the substrate flags in the gate, so the build and the term_sets=
+    # accessor override share one code path.
+    term_sets     <- load_term_sets(data_in_dir)
+    resolved      <- resolve_term_sets(term_sets, path_for("go_mf_genesets"))
+
     message("Loading phosphatase sources ...")
-    go_phosphatase_sets <- load_go_phosphatase_sets(path_for("go_mf_genesets"))
+    go_phosphatase_sets <- load_go_phosphatase_sets(path_for("go_mf_genesets"), resolved$phosphatase)
     # Experimental support = the no-IEA phosphatase umbrella + protein-phosphatase sets.
     go_experimental_ids <- load_go_experimental_ids(
       file.path(data_in_dir, GO_GENESET_VARIANTS$no_iea$filename), c("GO:0016791", "GO:0004721"))
@@ -191,6 +197,7 @@ build_phosphatase_list <- function(refresh_data    = TRUE,
     phosphatases_table <- classify_phosphatases(universe_ensembl_ids, hgnc_bridge,
                                                 go_phosphatase_sets, ec_source, membership,
                                                 chen_source$facts_table,
+                                                resolved$phosphatase,
                                                 go_experimental_ids = go_experimental_ids)
 
     invisible(list(phosphatases = phosphatases_table, unmapped = unmapped_records))

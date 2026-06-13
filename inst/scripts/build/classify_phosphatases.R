@@ -1,52 +1,27 @@
-# Per-gene phosphatase classification (the protein-phosphatase gate) and assembly of the master
-# table, mirroring classify_kinases so the two masters share a schema. The gate is function-first
-# and symmetric with the kinase side: a non-protein substrate signal wins unless the gene carries
-# protein-phosphatase activity GO (the substrate-accurate signal). Catalog membership (Chen / HGNC
-# groups) and protein-EC are protein EVIDENCE but never substrate OVERRIDES -- phosphatase
-# protein-EC (3.1.3.16/48) is promiscuously assigned (PTEN, MTM lipid phosphatases carry it), so it
-# scores rigor (Axis 2) without authoring the substrate call. The override keys on IEA-inclusive
-# protein GO, guarded by the PSPH reverse canary (symmetric with the kinase gate).
-
-# Non-protein substrate classes by 4-digit EC (the codes that carry a clear substrate meaning).
-PPASE_EC_LIPID      <- c("3.1.3.4", "3.1.3.36", "3.1.3.64", "3.1.3.66", "3.1.3.67",
-                         "3.1.3.78", "3.1.3.86", "3.1.3.95")
-PPASE_EC_NUCLEOTIDE <- c("3.1.3.5", "3.1.3.6", "3.1.3.7", "3.1.3.31", "3.1.3.91", "3.6.1.1")
-PPASE_EC_CARB       <- c("3.1.3.9", "3.1.3.10", "3.1.3.11", "3.1.3.37", "3.1.3.46", "3.1.3.58")
-# Chen families that are unambiguously non-protein, for genes lacking a specific non-protein EC.
-CHEN_FAMILY_LIPID      <- c("Myotubularin", "Sac", "PTEN", "INPP4", "Lipin",
-                            "Phosphatidic acid phosphatase", "IPP5")
-# P5NPSP is a mixed HAD family (pyrimidine-5'-nucleotidase AND phosphoserine phosphatase, e.g.
-# PSPH), so it is deliberately NOT mapped to nucleotide -- its members fall back to "other".
-CHEN_FAMILY_NUCLEOTIDE <- c("5N", "NagD", "Deoxyribonucleotidases",
-                            "cN-I nucleotidases", "cN-II nucleotidases")
-CHEN_FAMILY_CARB       <- c("Glc-6-Pase")
-# AP = the alkaline/acid phosphatase fold: broad-specificity small-molecule phosphatases (typed
-# "other"). Ensures AP-fold genes lacking a specific EC (e.g. ALPG) still carry non-protein typing.
-CHEN_FAMILY_OTHER      <- c("AP")
-
-# First-matching non-protein substrate class for one gene: a specific non-protein EC, then a
-# non-protein GO class, then a clearly-non-protein Chen family, then a generic "other" when some
-# non-protein signal exists but no finer class maps (so the enum is never left blank when the gate
-# tripped a non-protein signal -- the §4A consistency invariant). NA when there is no signal.
-classify_nonprotein_phosphatase_class <- function(ec_codes, chen_family, chen_nonprotein,
-                                                  go_lipid, go_nucleotide, go_carbohydrate, go_inositol) {
-  if (any(ec_codes %in% PPASE_EC_LIPID))       return("lipid")
-  if (any(ec_codes %in% PPASE_EC_NUCLEOTIDE))  return("nucleotide")
-  if (any(ec_codes %in% PPASE_EC_CARB))        return("carbohydrate")
-  if (isTRUE(go_lipid))        return("lipid")
-  if (isTRUE(go_nucleotide))   return("nucleotide")
-  if (isTRUE(go_carbohydrate)) return("carbohydrate")
-  if (isTRUE(go_inositol))     return("other")
-  if (!is.na(chen_family) && chen_family %in% CHEN_FAMILY_LIPID)      return("lipid")
-  if (!is.na(chen_family) && chen_family %in% CHEN_FAMILY_NUCLEOTIDE) return("nucleotide")
-  if (!is.na(chen_family) && chen_family %in% CHEN_FAMILY_CARB)       return("carbohydrate")
-  if (!is.na(chen_family) && chen_family %in% CHEN_FAMILY_OTHER)      return("other")
-  if (length(ec_codes) > 0 || isTRUE(chen_nonprotein)) return("other")
-  NA_character_
-}
+# Per-gene phosphatase classification (the phosphatase gate) and assembly of the master table,
+# mirroring classify_kinases so the two masters share a schema. RIGOR is scored substrate-blind --
+# a gene stands in Axis 2 when it carries ANY class EC (protein or non-protein), the phosphatase EC
+# allow-list / non-protein 3.1.3.x codes -- and SUBSTRATE is typed by the four co-equal flags (GO
+# protein / GO non-protein / EC protein / EC non-protein, plus the Chen curated non-protein flag)
+# with NO lineage default: a structural catalog tells you the gene is a phosphatase, never which
+# substrate it dephosphorylates. The substrate flags + tiering both come from the single shared
+# apply_term_sets() path, so the build gate and the accessor term_sets= override agree.
+#
+#   universe_ensembl_ids : sorted union of all membership legs
+#   hgnc_bridge          : provides $gene_metadata (identifiers + HGNC fields)
+#   go_phosphatase_sets  : load_go_phosphatase_sets() output -- phosphatase_activity_umbrella,
+#                          protein_phosphatase_activity, nonprotein_all, nonprotein_by_subtype
+#   ec_phosphatase       : load_ec_phosphatome() output; $ec_table carries all_ec_codes
+#   membership           : named list of per-source Ensembl vectors
+#   chen_facts           : load_chen_phosphatome()$facts_table -- taxonomy + substrate flags + status
+#   resolved_phosphatase : resolve_term_sets()$phosphatase -- the resolved EC/GO matchers
 
 classify_phosphatases <- function(universe_ensembl_ids, hgnc_bridge, go_phosphatase_sets, ec_phosphatase,
-                                  membership, chen_facts, go_experimental_ids = character(0)) {
+                                  membership, chen_facts, resolved_phosphatase,
+                                  go_experimental_ids = character(0)) {
+
+  # Add a TRUE/FALSE column named {{ flag }} marking rows whose ensembl_gene_id is in `ids`
+  # (a tidy left join instead of a bare `%in%` membership test). `flag` is a bare column name.
   add_set_flag <- function(data, ids, flag) {
     data |>
       left_join(tibble(ensembl_gene_id = unique(ids), present_in_set = TRUE),
@@ -55,111 +30,115 @@ classify_phosphatases <- function(universe_ensembl_ids, hgnc_bridge, go_phosphat
       select(-present_in_set)
   }
 
-  hgnc_bridge$gene_metadata |>
+  # Per-gene non-protein GO subtype: pipe-joined names of the nonprotein_by_subtype sublists whose
+  # id-vector contains the gene (empty string if none). Drives nonprotein_substrate_type in
+  # apply_term_sets() alongside the EC subtype.
+  np_subtype_of <- function(id) {
+    hits <- names(go_phosphatase_sets$nonprotein_by_subtype)[
+      map_lgl(go_phosphatase_sets$nonprotein_by_subtype, \(ids) id %in% ids)]
+    paste(hits, collapse = "|")
+  }
+
+  classified <- hgnc_bridge$gene_metadata |>
     semi_join(tibble(ensembl_gene_id = universe_ensembl_ids), by = join_by(ensembl_gene_id)) |>
-    # EC table (is_protein_phosphatase_ec + non-protein EC codes), joined in.
-    left_join(ec_phosphatase$ec_table |>
-                select(ensembl_gene_id, is_protein_phosphatase_ec, nonprotein_phosphatase_ec),
+    # EC table -- only the all_ec_codes list-column; apply_term_sets() recomputes EC typing from
+    # the resolved term set, so the leg's precomputed protein/non-protein EC flags are not joined.
+    left_join(ec_phosphatase$ec_table |> select(ensembl_gene_id, all_ec_codes),
               by = join_by(ensembl_gene_id)) |>
     # Chen per-gene facts (taxonomy + substrate flags + catalytic status), joined in.
     left_join(chen_facts, by = join_by(ensembl_gene_id)) |>
     # one binary membership column per source
-    add_set_flag(membership$chen,                 is_chen) |>
-    add_set_flag(membership$hgnc_protein_group,    is_hgnc_phosphatase_group) |>
-    add_set_flag(membership$go_umbrella,           is_go_phosphatase_activity) |>
-    add_set_flag(membership$ec,                    is_phosphatase_ec) |>
-    add_set_flag(membership$uniprot_keyword,       is_uniprot_kw_phosphatase) |>
-    # GO sets used by the gate / typing
+    add_set_flag(membership$chen,              is_chen) |>
+    add_set_flag(membership$hgnc_protein_group, is_hgnc_phosphatase_group) |>
+    add_set_flag(membership$go_umbrella,       is_go_phosphatase_activity) |>
+    add_set_flag(membership$ec,                is_phosphatase_ec) |>
+    add_set_flag(membership$uniprot_keyword,   is_uniprot_kw_phosphatase) |>
+    # GO functional sets used by the substrate flags.
     add_set_flag(go_phosphatase_sets$protein_phosphatase_activity, in_protein_phosphatase_go) |>
-    add_set_flag(go_phosphatase_sets$lipid_phosphatase,            in_go_lipid) |>
-    add_set_flag(go_phosphatase_sets$nucleotide_phosphatase,       in_go_nucleotide) |>
-    add_set_flag(go_phosphatase_sets$carbohydrate_phosphatase,     in_go_carbohydrate) |>
-    add_set_flag(go_phosphatase_sets$inositol_phosphatase,         in_go_inositol) |>
+    add_set_flag(go_phosphatase_sets$nonprotein_all,               in_nonprotein_go) |>
+    # Provenance proxy: non-electronic (experimental/curated) GO phosphatase-activity support.
     add_set_flag(go_experimental_ids,                              go_experimental) |>
     mutate(
-      is_protein_phosphatase_ec = coalesce(is_protein_phosphatase_ec, FALSE),
-      nonprotein_phosphatase_ec = map(nonprotein_phosphatase_ec, ~ if (is.null(.x)) character(0) else .x),
+      # An empty EC code list for genes the EC leg never saw, so map() over all_ec_codes is safe.
+      all_ec_codes = map(all_ec_codes, \(codes) if (is.null(codes)) character(0) else codes),
       chen_nonprotein_substrate = coalesce(chen_nonprotein_substrate, FALSE),
-      chen_protein_substrate    = coalesce(chen_protein_substrate, FALSE),
-
-      # Axis 1 (structural catalog): Chen phosphatome OR an HGNC protein-phosphatase gene group.
-      in_structural_catalog = is_chen | is_hgnc_phosphatase_group,
-      # Axis 2 (biochemical): a protein-specific 4-digit EC (3.1.3.16 / 3.1.3.48).
-      n_evidence_dimensions = as.integer(in_structural_catalog) + as.integer(is_protein_phosphatase_ec),
-      curated_core = n_evidence_dimensions >= 1L,
-      has_uniprot_kw = is_uniprot_kw_phosphatase,
-      supplementary_support = go_experimental | has_uniprot_kw,
-
-      # Non-protein substrate class (co-equal signals: EC, GO, Chen). NA when no signal.
-      nonprotein_class = pmap_chr(
-        list(nonprotein_phosphatase_ec, chen_family, chen_nonprotein_substrate,
-             in_go_lipid, in_go_nucleotide, in_go_carbohydrate, in_go_inositol),
-        classify_nonprotein_phosphatase_class),
-      nonprotein_substrate_type = coalesce(nonprotein_class, ""),
-      acts_on_nonprotein = nzchar(nonprotein_substrate_type),
-
-      # Protein-phosphatase evidence (assignment uses all functional evidence; scoring is separate).
-      protein_phosphatase_evidence = in_protein_phosphatase_go | in_structural_catalog | is_protein_phosphatase_ec,
-      # Lineage never overrides substrate: the override keys on protein-phosphatase activity GO only,
-      # never on the promiscuous protein-EC or on catalog membership (the PTEN principle).
-      nonprotein_wins = acts_on_nonprotein & !in_protein_phosphatase_go,
-      protein_phosphatase = !nonprotein_wins & protein_phosphatase_evidence,
-      acts_on_protein = protein_phosphatase,
-      dual_protein_nonprotein = acts_on_protein & acts_on_nonprotein,
-
-      # Granular substrate label (parallels the kinase substrate_subtype).
-      phosphatase_type = case_when(
-        nonprotein_wins & nonprotein_substrate_type == "lipid"        ~ "Lipid phosphatase",
-        nonprotein_wins & nonprotein_substrate_type == "nucleotide"   ~ "Nucleotide phosphatase",
-        nonprotein_wins & nonprotein_substrate_type == "carbohydrate" ~ "Carbohydrate/sugar phosphatase",
-        nonprotein_wins                                               ~ "Other small-molecule phosphatase",
-        protein_phosphatase                                          ~ "Protein phosphatase",
-        .default                                                     = "Unclassified phosphatase"),
-
-      catalytic_status = coalesce(catalytic_status, "active"),
-      is_pseudophosphatase = coalesce(is_pseudophosphatase, FALSE),
-      is_catalytic_background = catalytic_status == "active" & curated_core,
-
-      membership_basis = case_when(
-        is_chen                   ~ "reconstructed:Chen2017",
-        is_hgnc_phosphatase_group ~ "reconstructed:HGNC_groups",
-        .default                  = NA_character_),
-
-      protein_evidence_label = case_when(
-        in_structural_catalog & is_protein_phosphatase_ec & in_protein_phosphatase_go ~ "structural catalog + protein-EC + GO",
-        in_structural_catalog & is_protein_phosphatase_ec                            ~ "structural catalog + protein-EC",
-        in_structural_catalog & in_protein_phosphatase_go                            ~ "structural catalog + GO",
-        is_protein_phosphatase_ec & in_protein_phosphatase_go                        ~ "protein-EC + GO",
-        in_structural_catalog                                                        ~ "structural catalog",
-        is_protein_phosphatase_ec                                                    ~ "protein-EC",
-        in_protein_phosphatase_go                                                    ~ "GO protein-phosphatase activity",
-        .default                                                                     = "lineage evidence"),
-      classification_reason = case_when(
-        nonprotein_wins     ~ str_c(phosphatase_type, ": non-protein substrate; no protein-phosphatase GO"),
-        protein_phosphatase ~ str_c("protein phosphatase: ", protein_evidence_label),
-        .default            = "non-catalytic / unclassified: in a phosphatase set but no protein or non-protein substrate evidence"),
-
-      evidence_tier = case_when(
-        n_evidence_dimensions == 2L                          ~ "Gold",
-        n_evidence_dimensions == 1L & supplementary_support  ~ "Silver",
-        n_evidence_dimensions == 1L                          ~ "Bronze",
-        .default                                             = "Provisional"),
 
       n_membership_sources = is_chen + is_hgnc_phosphatase_group + is_go_phosphatase_activity +
                              is_phosphatase_ec + is_uniprot_kw_phosphatase,
-      is_pseudogene = str_detect(coalesce(locus_type, ""), regex("pseudogene", ignore_case = TRUE))) |>
+
+      # Axis 1 -- structural catalog: the Chen phosphatome OR an HGNC protein-phosphatase gene group.
+      # The complementary Axis 2 (biochemical EC) is computed substrate-blind inside apply_term_sets().
+      in_structural_catalog = is_chen | is_hgnc_phosphatase_group,
+      # Supplementary support: experimental GO support OR the reviewed UniProt phosphatase keyword.
+      # Neither is an axis; together they split Silver from Bronze among single-axis genes and cannot
+      # manufacture standing from zero axes.
+      has_uniprot_kw = is_uniprot_kw_phosphatase,
+      supplementary_support = go_experimental | has_uniprot_kw,
+      # Coarse proxy for experimental GO support of the substrate call. The substrate_decider field
+      # it feeds is informational, not gating -- it records HOW the call was made, never changes it.
+      go_experimental_protein = go_experimental,
+      # catalytic_status from the Chen facts (active / pseudo / uncertain); everything else defaults
+      # to active. A SOFT signal, never a veto.
+      catalytic_status = coalesce(catalytic_status, "active"),
+
+      # Per-gene evidence inputs for apply_term_sets(): the four co-equal substrate signals plus the
+      # Chen curated non-protein flag.
+      go_protein            = in_protein_phosphatase_go,
+      go_nonprotein         = in_nonprotein_go,
+      go_nonprotein_subtype = map_chr(ensembl_gene_id, np_subtype_of),
+      chen_nonprotein       = chen_nonprotein_substrate)
+
+  # The shared term-set path: EC axis flags (rigor substrate-blind), the four substrate flags, the
+  # substrate call + provenance, the rigor tier, and the enrichment backgrounds. Binds its columns
+  # back onto the classified table.
+  classified <- apply_term_sets(classified, resolved_phosphatase)
+
+  classified |>
+    mutate(
+      # BACK-COMPAT: the rest of the pipeline reads these names.
+      is_protein_phosphatase_ec = ec_protein,
+      # phosphatase_type: protein/dual -> protein; otherwise the firing non-protein substrate subtype,
+      # in priority order; else a generic small-molecule label; else unclassified.
+      phosphatase_type = case_when(
+        substrate_call %in% c("protein", "dual")              ~ "Protein phosphatase",
+        str_detect(nonprotein_substrate_type, "lipid")        ~ "Lipid phosphatase",
+        str_detect(nonprotein_substrate_type, "nucleotide")   ~ "Nucleotide phosphatase",
+        str_detect(nonprotein_substrate_type, "carbohydrate") ~ "Carbohydrate/sugar phosphatase",
+        acts_on_nonprotein                                    ~ "Other small-molecule phosphatase",
+        .default                                              = "Unclassified phosphatase"),
+      classification_reason = case_when(
+        substrate_call %in% c("protein", "dual") ~ str_c("protein phosphatase: substrate evidence ", substrate_evidence),
+        acts_on_nonprotein                       ~ str_c(phosphatase_type, ": non-protein substrate (",
+                                                         nonprotein_substrate_type, ")"),
+        .default                                 = "in a phosphatase set but no protein or non-protein substrate evidence"),
+
+      is_pseudophosphatase = coalesce(is_pseudophosphatase, FALSE),
+      is_pseudogene = str_detect(coalesce(locus_type, ""), regex("pseudogene", ignore_case = TRUE)),
+      # Chen taxonomy carried through to the master.
+      phosphatase_fold      = chen_fold,
+      phosphatase_family    = chen_family,
+      phosphatase_subfamily = chen_subfamily,
+      # membership_basis: the deriving source of the Axis-1 (structural-catalog) call, anchored on the
+      # reconstructed Chen facts first, then the HGNC gene groups; NA when in no structural catalog.
+      membership_basis = case_when(
+        is_chen                   ~ "reconstructed:Chen2017",
+        is_hgnc_phosphatase_group ~ "reconstructed:HGNC_groups",
+        .default                  = NA_character_)) |>
+    # Final column set and order (drops all intermediate flag/gate columns).
     transmute(
       ensembl_gene_id,
       hgnc_symbol = symbol, hgnc_id, gene_name = name,
       acts_on_protein, acts_on_nonprotein, nonprotein_substrate_type,
       substrate_subtype = phosphatase_type,
+      substrate_call, substrate_evidence, substrate_concordance, substrate_decider,
+      ec_protein, ec_nonprotein, go_protein, go_nonprotein,
       dual_protein_nonprotein,
-      catalytic_status, is_catalytic_background, is_pseudophosphatase,
+      catalytic_status, is_catalytic_background, is_protein_catalytic_background, is_pseudophosphatase,
       n_evidence_dimensions, evidence_tier, curated_core,
       in_structural_catalog, is_protein_phosphatase_ec,
       go_experimental, has_uniprot_kw, supplementary_support, membership_basis,
       classification_reason,
-      phosphatase_fold = chen_fold, phosphatase_family = chen_family, phosphatase_subfamily = chen_subfamily,
+      phosphatase_fold, phosphatase_family, phosphatase_subfamily,
       n_membership_sources, is_pseudogene,
       entrez_id, uniprot_ids, prev_symbol, alias_symbol,
       enzyme_id_EC = enzyme_id,
