@@ -158,7 +158,9 @@ write_outputs <- function(kinases_table, unmapped_table, output_dir, source_mani
 
 # Check the sanity genes (the cases the functional gate must get right) and, when
 # verbose, print the QC summary. Returns TRUE if every sanity gene passed.
-qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_kinase_n = NA_integer_) {
+qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_kinase_n = NA_integer_,
+                      phosphatases_table = NULL, manifest_term_set_md5 = NULL,
+                      extdata_dir = NULL) {
   emit <- function(...) if (verbose) cat(...)
 
   emit("\n==================== QC REPORT ====================\n")
@@ -254,6 +256,62 @@ qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_
     passed
   })
   all_passed <- all_passed && all(invariant_results)
+
+  # --- evidence-health bounds: fold into pass/fail, never bypass it -----------------------
+  # A pass/fail assertion helper that prints the observed count against its bound and
+  # contributes to all_passed exactly like a sanity gene. `ok` is the condition that must hold.
+  assert_bound <- function(label, value, ok, detail) {
+    passed <- isTRUE(ok)
+    all_passed <<- all_passed && passed
+    emit(sprintf("  [%s] %-44s %6d  (%s)\n", if (passed) "PASS" else "FAIL", label, value, detail))
+  }
+
+  # An "electronic-only protein" call is one whose substrate is protein yet whose evidence_tier
+  # is Provisional: it rests on supplementary GO alone (zero evidence dimensions -- no structural
+  # catalog, no protein-EC). A ballooning count is the signature of a typing leak (homology-
+  # propagated IEA GO terms inflating the protein population with no hard evidence behind them).
+  # The untyped-curated-core count guards the opposite failure: strict-mode genes the substrate
+  # gate could not type -- a large value means the gate is admitting catalog members it cannot
+  # actually assign a substrate to. Both bounds are observed-count + headroom, wide tripwires.
+  # One table's evidence-health block: the untyped-core and electronic-only bounds plus the
+  # background-subset consistency check. Bounds differ by class (kinase vs phosphatase), so they
+  # are passed in; `tag` labels the printed rows. Also asserts that the protein-catalytic
+  # background is a strict subset of the catalytic background (every protein-catalytic gene is
+  # catalytic), which a disagreeing pair of flags would violate.
+  emit_evidence_health <- function(tbl, tag, untyped_bound, elec_only_bound) {
+    untyped_core <- sum(tbl$substrate_call == "untyped" & tbl$curated_core)
+    elec_only    <- sum(tbl$acts_on_protein & tbl$evidence_tier == "Provisional")
+    background_leak <- sum(tbl$is_protein_catalytic_background & !tbl$is_catalytic_background)
+    assert_bound(sprintf("untyped curated-core (%s)", tag),    untyped_core, untyped_core < untyped_bound,   "strict-mode genes the gate could not type")
+    assert_bound(sprintf("electronic-only protein (%s)", tag), elec_only,    elec_only    < elec_only_bound, "protein call on supplementary GO alone")
+    emit(sprintf("  catalytic background (%s) ......... %d  |  protein-catalytic %d\n",
+                 tag, sum(tbl$is_catalytic_background), sum(tbl$is_protein_catalytic_background)))
+    assert_bound(sprintf("protein-cat subset of cat (%s)", tag), background_leak, background_leak == 0L, "must be 0; backgrounds disagree")
+  }
+
+  emit("\nEvidence-health bounds (k = kinases, p = phosphatases):\n")
+  emit_evidence_health(kinases_table, "k", untyped_bound = 80L, elec_only_bound = 110L)
+  if (!is.null(phosphatases_table))
+    emit_evidence_health(phosphatases_table, "p", untyped_bound = 60L, elec_only_bound = 50L)
+
+  # The shipped tables stamp the md5 of every term-set CSV; the build manifest records the same
+  # md5s. They must agree -- a mismatch means a term-set CSV was edited after the manifest was
+  # stamped (or vice versa), so the gate that built the tables no longer matches the recorded
+  # provenance. Verify the on-disk CSVs hash to exactly what the manifest holds.
+  if (!is.null(manifest_term_set_md5) && !is.null(extdata_dir)) {
+    # Hash the same four CSVs the loader reads (TERM_SET_FILES is the single source of those
+    # names), so a future rename of one term-set file cannot silently desync this check.
+    on_disk_md5 <- set_names(
+      unname(tools::md5sum(file.path(extdata_dir, TERM_SET_FILES))), names(TERM_SET_FILES))
+    emit("\nTerm-set provenance (on-disk md5 vs manifest):\n")
+    for (key in names(TERM_SET_FILES)) {
+      recorded <- manifest_term_set_md5[[key]]
+      matches  <- !is.na(on_disk_md5[[key]]) && identical(unname(on_disk_md5[[key]]), unname(recorded))
+      all_passed <- all_passed && matches
+      emit(sprintf("  [%s] %-16s %s\n", if (matches) "PASS" else "FAIL", key,
+                   if (matches) substr(on_disk_md5[[key]], 1, 12) else "MISMATCH"))
+    }
+  }
 
   emit(sprintf("\nSanity check: %s\n", if (all_passed) "ALL PASS" else "FAILURES ABOVE"))
   if (go_canary_failed)

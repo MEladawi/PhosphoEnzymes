@@ -93,15 +93,55 @@ test_that("every protein-acting phosphatase has at least one evidence dimension"
 })
 
 test_that("protein-kinase and protein-phosphatase counts are within expected ranges", {
-  # Source-drift tripwire. The human protein kinome is ~500-560; the protein
-  # phosphatome is ~189 (Chen et al. 2017). Wide bands - this catches a catalog
-  # that silently halved or doubled, not fine fluctuations.
+  # Source-drift tripwire. Every band below is a WIDE bracket around the observed
+  # count, not a tight equality: each catches a catalog that silently halved or
+  # doubled (or a typing gate that started leaning on weak evidence), while leaving
+  # enough headroom that an ordinary source-release fluctuation does not trip it.
   k <- pe_kinases()
   p <- pe_phosphat()
+
+  # Protein-acting subset (the count biologists call the "protein kinome /
+  # phosphatome"). Human protein kinome is ~500-560 (observed 556); the protein
+  # phosphatome is ~189 (Chen et al. 2017; observed 181).
   n_pk <- sum(k$acts_on_protein)
   n_pp <- sum(p$acts_on_protein)
-  expect_gt(n_pk, 450L); expect_lt(n_pk, 650L)
-  expect_gt(n_pp, 150L); expect_lt(n_pp, 260L)
+  expect_gt(n_pk, 450L); expect_lt(n_pk, 650L)   # 556 sits comfortably mid-band
+  expect_gt(n_pp, 150L); expect_lt(n_pp, 220L)   # 181 fits with room either side
+
+  # Full-table membership (every gene the union of legs admits, protein + non-protein
+  # + untyped). The full phosphatome (observed 298) sits very close to a round 300, so
+  # the upper bound carries deliberate margin -- a ceiling at exactly 300 would trip on
+  # a single source adding a handful of genes. 230-320 keeps the tripwire meaningful
+  # (a doubled or halved catalog still fails) without that brittleness.
+  expect_gt(nrow(p), 230L); expect_lt(nrow(p), 320L)   # observed 298
+  # Full kinome (observed 756): a wide bracket around it catches a collapsed or
+  # ballooned union, nothing finer.
+  expect_gt(nrow(k), 650L); expect_lt(nrow(k), 850L)   # observed 756
+
+  # Gold-tier floor: the highest-confidence tier (both evidence axes present) must
+  # never empty out -- a zero here means the structural catalog or protein-EC axis
+  # stopped resolving. Observed phosphatase Gold 136, kinase Gold 146.
+  expect_gt(sum(p$evidence_tier == "Gold"), 80L)       # observed 136
+  expect_gt(sum(k$evidence_tier == "Gold"), 80L)       # observed 146
+
+  # Untyped curated-core: genes in the strict-mode core (>=1 evidence dimension)
+  # that the substrate gate could not type from EC/GO. This is expected to stay
+  # small; a large value would mean the gate is admitting catalog members it cannot
+  # actually assign a substrate to. Observed k/p = 38 / 22.
+  n_untyped_core_k <- sum(k$substrate_call == "untyped" & k$curated_core)
+  n_untyped_core_p <- sum(p$substrate_call == "untyped" & p$curated_core)
+  expect_lt(n_untyped_core_k, 80L)   # observed 38; headroom for source churn
+  expect_lt(n_untyped_core_p, 60L)   # observed 22
+
+  # Electronic-only-protein leak bound: a protein call (acts_on_protein) whose
+  # evidence_tier is "Provisional" rests on supplementary GO alone -- zero evidence
+  # dimensions, no structural catalog and no protein-EC. A ballooning count here is
+  # the signature of a typing leak: homology-propagated IEA GO terms inflating the
+  # protein population without any hard evidence behind them. Observed k/p = 50 / 17.
+  n_elec_only_k <- sum(k$acts_on_protein & k$evidence_tier == "Provisional")
+  n_elec_only_p <- sum(p$acts_on_protein & p$evidence_tier == "Provisional")
+  expect_lt(n_elec_only_k, 110L)   # observed 50; well under the protein kinome floor
+  expect_lt(n_elec_only_p, 50L)    # observed 17
 })
 
 test_that("tier monotonicity holds: Gold implies both axes, Provisional implies none", {

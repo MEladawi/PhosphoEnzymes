@@ -141,7 +141,8 @@ build_kinase_list <- function(refresh_data    = TRUE,
                     build_date, pipeline_version)
     }
     sanity_passed <- qc_report(kinases_table, unmapped_records, verbose = !quiet,
-                               go_protein_kinase_n = length(go_sets$protein_kinase_activity))
+                               go_protein_kinase_n = length(go_sets$protein_kinase_activity),
+                               manifest_term_set_md5 = term_sets$md5, extdata_dir = data_in_dir)
 
     invisible(list(kinases       = kinases_table,
                    unmapped      = unmapped_records,

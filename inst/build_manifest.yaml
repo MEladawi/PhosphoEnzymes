@@ -1,5 +1,5 @@
 build_date: '2026-06-14'
-package_version: 0.99.0
+package_version: 0.99.1
 tables:
   human_kinases:
     n_rows: 756

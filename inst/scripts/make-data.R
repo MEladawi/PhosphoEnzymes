@@ -96,4 +96,20 @@ if (requireNamespace("yaml", quietly = TRUE)) {
   warning("Package 'yaml' not available; skipped inst/build_manifest.yaml")
 }
 
+# --- Consolidated cross-table QC against the WRITTEN manifest -----------------
+# qc_report runs inside build_kinase_list with only the kinase table in scope. Re-run it here now
+# that both engine tables and the manifest exist, supplying the phosphatase table plus the term-set
+# md5s the manifest just recorded. This is the point where the term-set CSVs on disk can be checked
+# against their recorded provenance, and where the phosphatase evidence-health bounds are asserted.
+# Abort the build if any bound or provenance check fails, mirroring the kinase sanity gate.
+qc_cross_passed <- qc_report(
+  kinases_table         = result$kinases,
+  unmapped_table        = result$unmapped,
+  verbose               = TRUE,
+  phosphatases_table    = phos$phosphatases,
+  manifest_term_set_md5 = manifest$term_sets,
+  extdata_dir           = "inst/extdata")
+if (!isTRUE(qc_cross_passed))
+  stop("Cross-table QC (evidence-health bounds or term-set provenance) failed; aborting data build.")
+
 message("make-data.R complete.")
