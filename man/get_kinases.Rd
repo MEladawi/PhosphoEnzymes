@@ -4,22 +4,31 @@
 \alias{get_kinases}
 \title{Access the human kinase reference table}
 \usage{
-get_kinases(mode = c("comprehensive", "strict"))
+get_kinases(
+  mode = c("comprehensive", "strict"),
+  substrate = c("any", "protein", "nonprotein")
+)
 }
 \arguments{
 \item{mode}{\code{"comprehensive"} (the full membership union, default) or
-\code{"strict"} (the canonical set: genes with at least one evidence dimension,
-i.e. an expert structural catalog and/or a protein-specific EC; equivalently
-\code{curated_core == TRUE} / not Provisional).}
+\code{"strict"} (\code{curated_core == TRUE}: genes carrying at least one class-
+evidence kind -- an expert structural/sequence catalog and/or a class-
+specific EC).}
+
+\item{substrate}{\code{"any"} (default), \code{"protein"} (keep \code{acts_on_protein}), or
+\code{"nonprotein"} (keep \code{acts_on_nonprotein}). A dual enzyme satisfies both.}
 }
 \value{
 A \link[tibble:tibble]{tibble} of human kinases, one row per gene.
 }
 \description{
-Access the human kinase reference table
+Two orthogonal knobs. \code{mode} filters rigor (\code{curated_core}) and \code{substrate}
+filters the substrate booleans; the two never couple, so \code{mode = "strict"}
+is not a protein filter -- a strictly-curated lipid or sugar kinase is kept
+unless you also ask for \code{substrate = "protein"}.
 }
 \examples{
 k <- get_kinases()
 nrow(k)
-get_kinases(mode = "strict")
+get_kinases(mode = "strict", substrate = "protein")
 }

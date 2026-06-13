@@ -15,11 +15,18 @@ A data frame with one row per gene and the following columns:
 \item{nonprotein_substrate_type}{Pipe-delimited non-protein classes; empty = protein-only.}
 \item{dual_protein_nonprotein}{Logical. Acts on both.}
 \item{catalytic_status}{"active" / "pseudo" / "uncertain".}
-\item{n_evidence_dimensions}{Integer 0-2. The rigor metric.}
+\item{n_evidence_dimensions}{Integer. Count of distinct class-evidence kinds -- structural/
+sequence catalog and any class-specific EC -- confirming a bona fide enzyme of the class.
+Range 0-2, substrate-agnostic. Distinct in kind, not statistically independent.}
 \item{evidence_sources}{Semicolon-joined names of the supporting sources.}
 \item{evidence_tier}{"Gold" / "Silver" / "Bronze" / "Provisional".}
-\item{curated_core}{Logical. >= 1 evidence dimension.}
-\item{is_catalytic_background}{Logical. Active AND curated_core.}
+\item{curated_core}{Logical. >= 1 evidence dimension. Filtered by the accessor
+\code{mode = "strict"} knob.}
+\item{substrate_call}{One of "protein" / "nonprotein" / "dual" / "untyped".}
+\item{is_catalytic_background}{Logical. Substrate-blind: \code{catalytic_status == "active"} AND
+\code{curated_core}.}
+\item{is_protein_catalytic_background}{Logical. The default protein-enzyme enrichment
+background: active AND \code{curated_core} AND \code{acts_on_protein}.}
 }
 }
 \source{

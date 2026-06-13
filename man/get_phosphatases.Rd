@@ -4,13 +4,19 @@
 \alias{get_phosphatases}
 \title{Access the human protein-phosphatase reference table}
 \usage{
-get_phosphatases(mode = c("comprehensive", "strict"))
+get_phosphatases(
+  mode = c("comprehensive", "strict"),
+  substrate = c("any", "protein", "nonprotein")
+)
 }
 \arguments{
 \item{mode}{\code{"comprehensive"} (the full membership union, default) or
-\code{"strict"} (the canonical set: genes with at least one evidence dimension,
-i.e. an expert structural catalog and/or a protein-specific EC; equivalently
-\code{curated_core == TRUE} / not Provisional).}
+\code{"strict"} (\code{curated_core == TRUE}: genes carrying at least one class-
+evidence kind -- an expert structural/sequence catalog and/or a class-
+specific EC).}
+
+\item{substrate}{\code{"any"} (default), \code{"protein"} (keep \code{acts_on_protein}), or
+\code{"nonprotein"} (keep \code{acts_on_nonprotein}). A dual enzyme satisfies both.}
 }
 \value{
 A \link[tibble:tibble]{tibble} of human phosphatases, one row per gene.
@@ -21,5 +27,5 @@ Access the human protein-phosphatase reference table
 \examples{
 p <- get_phosphatases()
 nrow(p)
-get_phosphatases(mode = "strict")
+get_phosphatases(mode = "strict", substrate = "protein")
 }

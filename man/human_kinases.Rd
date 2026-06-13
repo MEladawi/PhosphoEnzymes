@@ -11,29 +11,45 @@ A data frame with one row per gene and the following columns:
 \item{symbol}{HGNC symbol.}
 \item{acts_on_protein}{Logical. TRUE if the enzyme acts on protein substrates.}
 \item{acts_on_nonprotein}{Logical. TRUE if the enzyme acts on a non-protein
-substrate; strictly derived as \code{nzchar(nonprotein_substrate_type)}. Co-equal
-with \code{acts_on_protein} -- a dual enzyme (e.g. PIK3CA) is TRUE for both.}
+substrate. Co-equal with \code{acts_on_protein} -- a dual enzyme (e.g. PIK3CA) is
+TRUE for both; the two are filtered orthogonally by the \code{substrate} accessor knob.}
 \item{nonprotein_substrate_type}{Pipe-delimited non-protein substrate classes
-("lipid", "nucleotide", "carbohydrate", "other"); empty for protein-only.}
+("lipid", "nucleotide", "carbohydrate", "metabolite", "other"); empty for
+protein-only.}
 \item{substrate_subtype}{Finer-grained substrate label (e.g.
 "Inositol-phosphate kinase", "Creatine kinase").}
+\item{substrate_call}{One of "protein" / "nonprotein" / "dual" / "untyped" --
+the collapsed substrate verdict derived from \code{acts_on_protein} /
+\code{acts_on_nonprotein}.}
+\item{substrate_evidence}{Which evidence kinds drove the substrate call, joined
+with "+": any of "GO", "EC".}
+\item{substrate_concordance}{"concordant" (>1 substrate-evidence kind agrees),
+"single" (one kind), or "untyped".}
+\item{substrate_decider}{The precedence-winning evidence that set the substrate
+call ("GO-exp", "GO-elec", "EC", or "precedence-default").}
+\item{ec_protein}{Logical. A protein-substrate EC rule fired for this gene.}
+\item{ec_nonprotein}{Logical. A non-protein-substrate EC rule fired.}
+\item{go_protein}{Logical. A protein-substrate GO kinase-activity term fired.}
+\item{go_nonprotein}{Logical. A non-protein-substrate GO kinase-activity term fired.}
 \item{catalytic_status}{"active" / "pseudo" / "uncertain". From the curated
 pseudokinase set; a soft signal (a pseudokinase may carry a legacy EC), not a
 veto.}
-\item{is_catalytic_background}{Logical. Documented default enrichment background:
+\item{is_catalytic_background}{Logical. Substrate-blind enrichment background:
 \code{catalytic_status == "active"} AND \code{curated_core} (excludes pseudoenzymes and
-zero-dimension genes). Not a claim to be the uniquely correct universe.}
-\item{n_evidence_dimensions}{Integer 0-2. Count of distinct evidence classes
-confirming a bona fide kinase (the enzyme-class call): (1) structural/
-evolutionary sequence-family catalog, (2) biochemical protein-specific EC.
-Distinct in kind, not statistically independent (catalogs and EC share a
-literature ecosystem). The rigor metric.}
+zero-dimension genes), spanning protein and non-protein substrates alike.}
+\item{is_protein_catalytic_background}{Logical. The default protein-kinase
+enrichment background: \code{catalytic_status == "active"} AND \code{curated_core} AND
+\code{acts_on_protein}. Use this when the universe is protein kinases.}
+\item{n_evidence_dimensions}{Integer. Count of distinct class-evidence kinds --
+structural/sequence catalog and any class-specific EC -- confirming a bona fide
+enzyme of the class. Range 0-2, substrate-agnostic. Distinct in kind, not
+statistically independent.}
 \item{evidence_tier}{"Gold" / "Silver" / "Bronze" / "Provisional". Practical
 prioritization heuristic over the two evidence classes plus supplementary
-GO/UniProt-keyword support. Not a probability, not an evidence count, not a
-confidence score.}
+GO/UniProt-keyword support. Not a probability, not an evidence count.}
 \item{curated_core}{Logical. TRUE if the gene has >= 1 evidence dimension
-(i.e. not Provisional / not comprehensive-only).}
+(i.e. not Provisional / not comprehensive-only). Filtered by the accessor
+\code{mode = "strict"} knob, which never touches the substrate booleans.}
 \item{in_structural_catalog}{Logical. Axis 1: Manning / KinHub / kinase.com /
 pkinfam.}
 \item{is_protein_kinase_ec}{Logical. Axis 2: a protein-specific EC

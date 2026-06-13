@@ -10,20 +10,36 @@ A data frame with one row per gene and the following columns:
 \item{ensembl_gene_id}{Base (unversioned) Ensembl gene ID. Primary key.}
 \item{symbol}{HGNC symbol.}
 \item{acts_on_protein}{Logical. TRUE if the enzyme dephosphorylates protein substrates.}
-\item{acts_on_nonprotein}{Logical. Derived \code{nzchar(nonprotein_substrate_type)}; co-equal
-with \code{acts_on_protein} (a dual enzyme such as PTEN is non-protein, others may be both).}
+\item{acts_on_nonprotein}{Logical. Co-equal with \code{acts_on_protein} (a dual enzyme such as
+PTEN is TRUE for both); filtered orthogonally by the \code{substrate} accessor knob.}
 \item{nonprotein_substrate_type}{Pipe-delimited non-protein classes ("lipid", "nucleotide",
-"carbohydrate", "other"); empty for protein-only.}
+"carbohydrate", "metabolite", "other"); empty for protein-only.}
 \item{substrate_subtype}{Finer-grained substrate label (e.g. "Lipid phosphatase").}
+\item{substrate_call}{One of "protein" / "nonprotein" / "dual" / "untyped" -- the collapsed
+substrate verdict from \code{acts_on_protein} / \code{acts_on_nonprotein}.}
+\item{substrate_evidence}{Which evidence kinds drove the substrate call, joined with "+":
+any of "GO", "Chen", "EC".}
+\item{substrate_concordance}{"concordant", "single", or "untyped".}
+\item{substrate_decider}{The precedence-winning evidence that set the substrate call
+("GO-exp", "GO-elec", "Chen-flag", "EC", or "precedence-default").}
+\item{ec_protein}{Logical. A protein-substrate EC rule fired.}
+\item{ec_nonprotein}{Logical. A non-protein-substrate EC rule fired.}
+\item{go_protein}{Logical. A protein-substrate GO phosphatase-activity term fired.}
+\item{go_nonprotein}{Logical. A non-protein-substrate GO phosphatase-activity term fired.}
 \item{dual_protein_nonprotein}{Logical. Acts on both protein and non-protein substrates.}
 \item{catalytic_status}{"active" / "pseudo" / "uncertain", from Chen 2017.}
-\item{is_catalytic_background}{Logical. \code{catalytic_status == "active"} AND \code{curated_core}.}
+\item{is_catalytic_background}{Logical. Substrate-blind enrichment background:
+\code{catalytic_status == "active"} AND \code{curated_core}, spanning protein and non-protein alike.}
+\item{is_protein_catalytic_background}{Logical. The default protein-phosphatase enrichment
+background: \code{catalytic_status == "active"} AND \code{curated_core} AND \code{acts_on_protein}.}
 \item{is_pseudophosphatase}{Logical. Predicted catalytically dead (Chen 2017).}
-\item{n_evidence_dimensions}{Integer 0-2. Distinct evidence classes (structural catalog;
-protein-specific EC). Substrate-agnostic; distinct in kind, not statistically independent.}
+\item{n_evidence_dimensions}{Integer. Count of distinct class-evidence kinds -- structural/
+sequence catalog and any class-specific EC -- confirming a bona fide enzyme of the class.
+Range 0-2, substrate-agnostic. Distinct in kind, not statistically independent.}
 \item{evidence_tier}{"Gold" / "Silver" / "Bronze" / "Provisional"; heuristic over the two
-evidence classes plus supplementary support. Not a confidence score.}
-\item{curated_core}{Logical. >= 1 evidence dimension.}
+evidence classes plus supplementary support.}
+\item{curated_core}{Logical. >= 1 evidence dimension. Filtered by the accessor
+\code{mode = "strict"} knob, which never touches the substrate booleans.}
 \item{in_structural_catalog}{Logical. Axis 1: Chen 2017 phosphatome or an HGNC
 protein-phosphatase gene group.}
 \item{is_protein_phosphatase_ec}{Logical. Axis 2: EC 3.1.3.16 (Ser/Thr) or 3.1.3.48 (Tyr).}

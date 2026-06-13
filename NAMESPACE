@@ -3,3 +3,7 @@
 export(get_kinases)
 export(get_phosphatases)
 export(get_phosphoenzymes)
+export(get_term_set)
+export(provenance)
+export(set_term_set)
+export(validate_term_set)

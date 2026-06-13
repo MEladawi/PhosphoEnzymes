@@ -4,7 +4,10 @@
 \alias{get_phosphoenzymes}
 \title{Access the unified human phospho-enzyme summary}
 \usage{
-get_phosphoenzymes()
+get_phosphoenzymes(substrate = c("any", "protein", "nonprotein"))
+}
+\arguments{
+\item{substrate}{\code{"any"} (default), \code{"protein"}, or \code{"nonprotein"}.}
 }
 \value{
 A \link[tibble:tibble]{tibble} spanning both enzyme classes.
@@ -13,9 +16,12 @@ A \link[tibble:tibble]{tibble} spanning both enzyme classes.
 A thin, class-agnostic table spanning both kinases and phosphatases (one row per gene,
 \code{regulator_class} distinguishing them), carrying only the shared substrate/evidence columns.
 Join to \code{\link[=get_kinases]{get_kinases()}} / \code{\link[=get_phosphatases]{get_phosphatases()}} by \code{ensembl_gene_id} to recover class-specific
-taxonomy. Ships all rows including Provisional; filter on \code{evidence_tier} / \code{curated_core}.
+taxonomy. Ships all rows including Provisional; the summary has no \code{mode} knob (filter on
+\code{evidence_tier} / \code{curated_core} yourself), but it carries \code{acts_on_protein} /
+\code{acts_on_nonprotein}, so the \code{substrate} knob applies.
 }
 \examples{
 pe <- get_phosphoenzymes()
 table(pe$regulator_class)
+get_phosphoenzymes(substrate = "protein")
 }
