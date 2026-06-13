@@ -28,7 +28,8 @@ their accessors are present and return data once those tables are built.
 ```{r load-kinases}
 k <- get_kinases()
 nrow(k)
-table(k$substrate_type)
+# substrate is carried as co-equal columns; empty nonprotein_substrate_type = protein-only
+table(protein = k$acts_on_protein, nonprotein = k$nonprotein_substrate_type)
 ```
 
 ```{r strict-example, eval = FALSE}

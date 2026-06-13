@@ -3,12 +3,12 @@
 # They will go green on a structurally valid table even if the gate is wrong;
 # the biological correctness is guarded by test-trap-cases.R and test-invariants.R.
 
-ALLOWED_SUBSTRATE <- c("protein", "lipid", "nucleotide", "carbohydrate", "other")
-ALLOWED_TIER      <- c("Gold", "Silver", "Bronze", "Provisional")
+ALLOWED_NONPROTEIN <- c("lipid", "nucleotide", "carbohydrate", "other")
+ALLOWED_TIER       <- c("Gold", "Silver", "Bronze", "Provisional")
 
 REQUIRED_COLS <- c(
-  "ensembl_gene_id", "symbol", "acts_on_protein", "substrate_type",
-  "n_evidence_dimensions", "evidence_tier", "curated_core"
+  "ensembl_gene_id", "symbol", "acts_on_protein", "acts_on_nonprotein",
+  "nonprotein_substrate_type", "n_evidence_dimensions", "evidence_tier", "curated_core"
 )
 
 check_table_schema <- function(df) {
@@ -23,15 +23,18 @@ check_table_schema <- function(df) {
   # column types / domains
   expect_type(df$acts_on_protein, "logical")
   expect_false(anyNA(df$acts_on_protein))
+  expect_type(df$acts_on_nonprotein, "logical")
   expect_type(df$curated_core, "logical")
 
-  expect_true(all(df$substrate_type %in% ALLOWED_SUBSTRATE))
+  # nonprotein_substrate_type is pipe-delimited; empty = protein-only. Every token allowed.
+  tokens <- unlist(strsplit(df$nonprotein_substrate_type[nzchar(df$nonprotein_substrate_type)], "|", fixed = TRUE))
+  expect_true(all(tokens %in% ALLOWED_NONPROTEIN))
   expect_true(all(df$evidence_tier %in% ALLOWED_TIER))
   expect_true(all(df$n_evidence_dimensions %in% 0:2))
 
   # cross-field consistency
-  # acts_on_protein implies substrate_type == "protein", and vice versa
-  expect_equal(df$acts_on_protein, df$substrate_type == "protein")
+  # the substrate boolean and the enum can never disagree (the §4A canary)
+  expect_equal(df$acts_on_nonprotein, nzchar(df$nonprotein_substrate_type))
   # Provisional <=> zero axes <=> not curated_core
   expect_equal(df$evidence_tier == "Provisional",
                df$n_evidence_dimensions == 0L)
@@ -51,7 +54,7 @@ test_that("phosphatase table satisfies the schema contract", {
 test_that("unified summary has the agreed thin schema", {
   pe <- pe_unified()
   expect_true(all(c("ensembl_gene_id", "symbol", "regulator_class",
-                    "acts_on_protein", "substrate_type",
+                    "acts_on_protein", "acts_on_nonprotein", "nonprotein_substrate_type",
                     "n_evidence_dimensions", "evidence_tier",
                     "curated_core") %in% names(pe)))
   expect_true(all(pe$regulator_class %in% c("kinase", "phosphatase")))

@@ -84,6 +84,10 @@ build_kinase_list <- function(refresh_data    = TRUE,
     uniprot_kw_source <- load_uniprot_keyword_kinome(path_for("uniprot_keyword_kinase"), hgnc_bridge)
     idg_source        <- load_idg_dark_kinome(path_for("idg_dark_kinome"), hgnc_bridge)
     ec_source         <- load_ec_kinome(hgnc_bridge$gene_metadata)
+    # Curated pseudokinase symbols -> base Ensembl IDs; sets catalytic_status in classify.
+    pseudokinase_ensembl_ids <- read_csv(path_for("pseudokinases"), show_col_types = FALSE)$symbol |>
+      map_chr(~ hgnc_bridge$resolve_to_ensembl(source_symbols = .x)) |>
+      (\(ids) unique(ids[!is.na(ids)]))()
 
     membership <- list(
       pkinfam         = pkinfam_source$ensembl_ids,
@@ -106,7 +110,8 @@ build_kinase_list <- function(refresh_data    = TRUE,
     message("Classifying and assembling ...")
     kinases_table <- classify_kinases(universe_ensembl_ids, hgnc_bridge, go_sets,
                                       ec_source, membership, kinase_taxonomy,
-                                      go_experimental_ids = go_experimental_ids)
+                                      go_experimental_ids = go_experimental_ids,
+                                      pseudokinase_ensembl_ids = pseudokinase_ensembl_ids)
 
     if (write_files) {
       message("Writing outputs to ", output_dir, "/ ...")

@@ -3,8 +3,8 @@ package_version: 0.99.0
 tables:
   human_kinases:
     n_rows: 753
-    n_cols: 42
-    md5: 61084e8c1f1f4e97fa8a71f23987b44e
+    n_cols: 46
+    md5: 7872a4895d844ae4c9a8965a0dfa269d
 sources:
 - source: HGNC complete set (identifier bridge)
   file: hgnc_complete_set.txt
@@ -34,4 +34,8 @@ sources:
 - source: IDG understudied (dark) kinome
   file: IDG_dark_kinase_list.csv
   version: IDG DarkKinaseTools, fetched 2026-06-13
+  fetched: '2026-06-13'
+- source: Curated human pseudokinases (catalytic_status source)
+  file: pseudokinases.csv
+  version: curated pseudokinome list dated 2026-06-13
   fetched: '2026-06-13'

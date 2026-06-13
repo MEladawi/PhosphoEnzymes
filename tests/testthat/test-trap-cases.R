@@ -18,7 +18,7 @@ test_that("PTEN is a lipid phosphatase, not a protein phosphatase", {
   row <- pe_row(p, "PTEN")
   skip_if(is.null(row), "PTEN absent")
   expect_false(row$acts_on_protein)
-  expect_identical(row$substrate_type, "lipid")
+  expect_identical(row$nonprotein_substrate_type, "lipid")
 })
 
 test_that("MTMR2 is a lipid (phosphoinositide) phosphatase", {
@@ -27,7 +27,7 @@ test_that("MTMR2 is a lipid (phosphoinositide) phosphatase", {
   row <- pe_row(p, "MTMR2")
   skip_if(is.null(row), "MTMR2 absent")
   expect_false(row$acts_on_protein)
-  expect_identical(row$substrate_type, "lipid")
+  expect_identical(row$nonprotein_substrate_type, "lipid")
 })
 
 test_that("PSPH is a small-molecule phosphatase, not a protein phosphatase", {
@@ -38,7 +38,7 @@ test_that("PSPH is a small-molecule phosphatase, not a protein phosphatase", {
   row <- pe_row(p, "PSPH")
   skip_if(is.null(row), "PSPH absent")
   expect_false(row$acts_on_protein)
-  expect_false(identical(row$substrate_type, "protein"))
+  expect_true(row$acts_on_nonprotein)
 })
 
 # --- Phosphatases: genuine protein phosphatase that breaks the naive motif rule
@@ -51,7 +51,7 @@ test_that("EYA1 is a protein phosphatase despite lacking the CX5R motif", {
   row <- pe_row(p, "EYA1")
   skip_if(is.null(row), "EYA1 absent")
   expect_true(row$acts_on_protein)
-  expect_identical(row$substrate_type, "protein")
+  expect_false(row$acts_on_nonprotein)
   if ("is_pseudophosphatase" %in% names(row)) {
     expect_false(isTRUE(row$is_pseudophosphatase))
   }
@@ -100,7 +100,7 @@ test_that("PI4KA is a lipid kinase, not a protein kinase", {
   row <- pe_row(k, "PI4KA")
   skip_if(is.null(row), "PI4KA absent")
   expect_false(row$acts_on_protein)
-  expect_identical(row$substrate_type, "lipid")
+  expect_identical(row$nonprotein_substrate_type, "lipid")
 })
 
 test_that("SPHK1 is a lipid kinase, not a protein kinase", {
@@ -109,7 +109,7 @@ test_that("SPHK1 is a lipid kinase, not a protein kinase", {
   row <- pe_row(k, "SPHK1")
   skip_if(is.null(row), "SPHK1 absent")
   expect_false(row$acts_on_protein)
-  expect_identical(row$substrate_type, "lipid")
+  expect_identical(row$nonprotein_substrate_type, "lipid")
 })
 
 test_that("DGKA is a lipid kinase, not a protein kinase", {
@@ -118,7 +118,7 @@ test_that("DGKA is a lipid kinase, not a protein kinase", {
   row <- pe_row(k, "DGKA")
   skip_if(is.null(row), "DGKA absent")
   expect_false(row$acts_on_protein)
-  expect_identical(row$substrate_type, "lipid")
+  expect_identical(row$nonprotein_substrate_type, "lipid")
 })
 
 test_that("HK1 is a carbohydrate kinase, not a protein kinase", {
@@ -127,7 +127,7 @@ test_that("HK1 is a carbohydrate kinase, not a protein kinase", {
   row <- pe_row(k, "HK1")
   skip_if(is.null(row), "HK1 absent")
   expect_false(row$acts_on_protein)
-  expect_identical(row$substrate_type, "carbohydrate")
+  expect_identical(row$nonprotein_substrate_type, "carbohydrate")
 })
 
 test_that("AK1 is a nucleotide kinase, not a protein kinase", {
@@ -136,5 +136,5 @@ test_that("AK1 is a nucleotide kinase, not a protein kinase", {
   row <- pe_row(k, "AK1")
   skip_if(is.null(row), "AK1 absent")
   expect_false(row$acts_on_protein)
-  expect_identical(row$substrate_type, "nucleotide")
+  expect_identical(row$nonprotein_substrate_type, "nucleotide")
 })

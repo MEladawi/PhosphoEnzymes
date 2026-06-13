@@ -8,12 +8,20 @@
 #' \describe{
 #'   \item{ensembl_gene_id}{Base (unversioned) Ensembl gene ID. Primary key.}
 #'   \item{symbol}{HGNC symbol.}
-#'   \item{acts_on_protein}{Logical. TRUE if the enzyme acts on protein
-#'     substrates (equivalently `substrate_type == "protein"`).}
-#'   \item{substrate_type}{One of "protein", "lipid", "nucleotide",
-#'     "carbohydrate", "other".}
+#'   \item{acts_on_protein}{Logical. TRUE if the enzyme acts on protein substrates.}
+#'   \item{acts_on_nonprotein}{Logical. TRUE if the enzyme acts on a non-protein
+#'     substrate; strictly derived as `nzchar(nonprotein_substrate_type)`. Co-equal
+#'     with `acts_on_protein` -- a dual enzyme (e.g. PIK3CA) is TRUE for both.}
+#'   \item{nonprotein_substrate_type}{Pipe-delimited non-protein substrate classes
+#'     ("lipid", "nucleotide", "carbohydrate", "other"); empty for protein-only.}
 #'   \item{substrate_subtype}{Finer-grained substrate label (e.g.
 #'     "Inositol-phosphate kinase", "Creatine kinase").}
+#'   \item{catalytic_status}{"active" / "pseudo" / "uncertain". From the curated
+#'     pseudokinase set; a soft signal (a pseudokinase may carry a legacy EC), not a
+#'     veto.}
+#'   \item{is_catalytic_background}{Logical. Documented default enrichment background:
+#'     `catalytic_status == "active"` AND `curated_core` (excludes pseudoenzymes and
+#'     zero-dimension genes). Not a claim to be the uniquely correct universe.}
 #'   \item{n_evidence_dimensions}{Integer 0-2. Count of distinct evidence classes
 #'     confirming a bona fide kinase (the enzyme-class call): (1) structural/
 #'     evolutionary sequence-family catalog, (2) biochemical protein-specific EC.
@@ -29,6 +37,9 @@
 #'     pkinfam.}
 #'   \item{is_protein_kinase_ec}{Logical. Axis 2: a protein-specific EC
 #'     (2.7.10-2.7.14).}
+#'   \item{membership_basis}{Deriving source of the Axis-1 (structural-catalog) call:
+#'     "reconstructed:pkinfam" (cleanly-licensed anchor), "reconstructed:kinase.com",
+#'     or "crosscheck:KinHub"; NA when the gene is in no structural catalog.}
 #'   \item{go_experimental}{Logical. A non-electronic GO kinase-activity code is
 #'     present (experimental/curated support).}
 #'   \item{has_uniprot_kw}{Logical. Reviewed Swiss-Prot kinase keyword present.}

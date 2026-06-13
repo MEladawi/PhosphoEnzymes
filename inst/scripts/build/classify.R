@@ -12,7 +12,8 @@
 #   taxonomy             : build_kinase_taxonomy() output (group/family/subfamily maps)
 
 classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, membership, taxonomy,
-                             go_experimental_ids = character(0)) {
+                             go_experimental_ids = character(0),
+                             pseudokinase_ensembl_ids = character(0)) {
   noncatalytic_pattern <- regex(
     "anchoring|phosphatase|activator|non-catalytic|guanylate kinases|subunits|MOB|binding RTK",
     ignore_case = TRUE)
@@ -108,6 +109,24 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
         protein_kinase  ~ "Protein kinase",
         .default        = ec_fallback_type),
 
+      # Substrate as co-equal columns: acts_on_protein (= protein_kinase, below) plus a
+      # pipe-delimited nonprotein_substrate_type (empty = protein-only). The non-protein label
+      # comes from the GO class for a dual gene (protein kinase that also has a non-protein
+      # activity) and from the final type for a non-protein gene. Soluble inositol phosphates,
+      # creatine, and the EC-fallback labels collapse to "other"; the granular label is kept in
+      # substrate_subtype. By construction any gene with a non-protein class populates this, so
+      # acts_on_nonprotein (= nzchar) and the enum can never disagree.
+      nonprotein_substrate_label = if_else(protein_kinase, nonprotein_class, kinase_type),
+      nonprotein_substrate_type = case_when(
+        nonprotein_substrate_label == "Lipid kinase"                          ~ "lipid",
+        nonprotein_substrate_label == "Carbohydrate/sugar kinase"             ~ "carbohydrate",
+        nonprotein_substrate_label %in% c("Nucleotide/nucleoside kinase",
+                                          "Nucleotide kinase")                ~ "nucleotide",
+        is.na(nonprotein_substrate_label) |
+          nonprotein_substrate_label == "Protein kinase"                      ~ "",
+        .default                                                              = "other"),
+      acts_on_nonprotein = nzchar(nonprotein_substrate_type),
+
       # Human-readable rationale for the substrate call -- the gate decision in words.
       protein_evidence_label = case_when(
         in_structural_catalog & is_protein_kinase_ec & in_protein_kinase_go ~ "structural catalog + protein-EC + GO",
@@ -123,7 +142,22 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
         protein_kinase  ~ str_c("protein kinase: ", protein_evidence_label),
         .default        = str_c(ec_fallback_type, ": EC-subclass fallback; no protein or non-protein GO evidence")),
 
-      dual_protein_nonprotein = protein_kinase & !is.na(nonprotein_class),
+      acts_on_protein = protein_kinase,
+      dual_protein_nonprotein = acts_on_protein & acts_on_nonprotein,
+      # catalytic_status from the curated pseudokinase set (lineage TRUE, catalytically dead);
+      # everything else defaults to active. A SOFT signal (a pseudokinase may retain a legacy EC
+      # and even reach Gold) -- never a veto. is_catalytic_background is the documented default
+      # enrichment denominator: active AND curated_core (excludes pseudoenzymes and 0-axis genes).
+      catalytic_status = if_else(ensembl_gene_id %in% pseudokinase_ensembl_ids, "pseudo", "active"),
+      is_catalytic_background = catalytic_status == "active" & curated_core,
+      # membership_basis: the deriving source of the Axis-1 (structural-catalog) call, anchored on
+      # the cleanly-licensed leg first (pkinfam CC-BY), then the reconstructed Manning facts, then
+      # KinHub as a cross-check; NA when the gene is in no structural catalog.
+      membership_basis = case_when(
+        is_pkinfam ~ "reconstructed:pkinfam",
+        is_manning ~ "reconstructed:kinase.com",
+        is_kinhub  ~ "crosscheck:KinHub",
+        .default   = NA_character_),
       # evidence_tier: a documented PRIORITIZATION HEURISTIC over the two axes plus
       # supplementary support -- NOT a probability, evidence count, or confidence score. Gold
       # requires BOTH axes (structure and biochemistry agree); Silver/Bronze split the one-axis
@@ -160,10 +194,12 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       ensembl_gene_id,
       hgnc_symbol = symbol, hgnc_id, gene_name = name,
       kinase_type, protein_kinase,
+      acts_on_protein, acts_on_nonprotein, nonprotein_substrate_type,
+      catalytic_status, is_catalytic_background,
       kinase_group, kinase_family, derived_family, kinase_subfamily, uniprot_protein_family,
       dual_protein_nonprotein, evidence_tier, n_evidence_dimensions,
       go_experimental, supplementary_support,
-      in_structural_catalog, is_protein_kinase_ec, classification_reason,
+      in_structural_catalog, is_protein_kinase_ec, classification_reason, membership_basis,
       n_membership_sources, curated_core,
       is_pseudogene,
       entrez_id, uniprot_ids, prev_symbol, alias_symbol,

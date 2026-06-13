@@ -128,7 +128,19 @@ SOURCE_REGISTRY <- list(
     local_filename = "IDG_dark_kinase_list.csv",
     download_url   = "https://raw.githubusercontent.com/IDG-Kinase/DarkKinaseTools/master/data-raw/dark_kinases/Dark%20Kinase%20List.csv",
     auto_updatable = TRUE,
-    read_version   = function(file_path) paste("IDG DarkKinaseTools, fetched", file_modification_date(file_path))))
+    read_version   = function(file_path) paste("IDG DarkKinaseTools, fetched", file_modification_date(file_path))),
+
+  # Curated, conservative set of established human pseudokinases (catalytically dead by the
+  # pseudokinome literature). Sets catalytic_status = "pseudo"; everything else defaults to
+  # "active". Not exhaustive by design -- a high-confidence list, so a missed pseudokinase reads
+  # "active" rather than mislabelling an active kinase. The kinase analog of Chen's per-gene
+  # catalytic-activity calls for phosphatases.
+  pseudokinases = list(
+    description    = "Curated human pseudokinases (catalytic_status source)",
+    local_filename = "pseudokinases.csv",
+    download_url   = NA_character_,
+    auto_updatable = FALSE,
+    read_version   = function(file_path) paste("curated pseudokinome list dated", file_modification_date(file_path))))
 
 # --- runtime configuration of the registry ----------------------------------
 

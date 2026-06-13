@@ -1,41 +1,40 @@
 # Map the engine's kinase table to the shipped `human_kinases` package schema.
-# The engine keeps its rich, internally-named columns (used by the QC report); this is
-# the presentation layer that renames to the cross-class vocabulary, flattens the granular
-# kinase_type into the controlled substrate_type, and selects the final, ordered column set.
+# The engine keeps its rich, internally-named columns (used by the QC report); this is the
+# presentation layer that renames to the cross-class vocabulary and selects the final, ordered
+# column set.
 #
-# substrate_type is the 5-value controlled vocabulary {protein, lipid, nucleotide,
-# carbohydrate, other}. acts_on_protein is TRUE exactly when substrate_type == "protein",
-# because the gate types a gene "Protein kinase" iff it passes the protein gate.
+# Substrate is carried as co-equal parallel columns -- acts_on_protein, acts_on_nonprotein, and
+# the pipe-delimited nonprotein_substrate_type (empty = protein-only) -- so a downstream
+# non-protein-pipeline filter never silently drops a dual enzyme (e.g. PIK3CA). The granular
+# label stays in substrate_subtype. All of these are computed in the gate; this layer only
+# renames and orders.
 
 harmonize_kinases_to_package_schema <- function(kinases_table) {
   kinases_table |>
-    mutate(
-      substrate_type = case_when(
-        kinase_type == "Protein kinase"                                  ~ "protein",
-        kinase_type == "Lipid kinase"                                    ~ "lipid",
-        kinase_type %in% c("Nucleotide/nucleoside kinase",
-                           "Nucleotide kinase")                          ~ "nucleotide",
-        kinase_type == "Carbohydrate/sugar kinase"                       ~ "carbohydrate",
-        .default                                                         = "other")) |>
     transmute(
       ensembl_gene_id,
       symbol            = hgnc_symbol,
-      acts_on_protein   = protein_kinase,
-      substrate_type,
+      acts_on_protein,
+      acts_on_nonprotein,
+      nonprotein_substrate_type,
       substrate_subtype = kinase_type,
+      dual_protein_nonprotein,
+      catalytic_status,
       n_evidence_dimensions,
       evidence_tier,
       curated_core,
+      is_catalytic_background,
       in_structural_catalog,
       is_protein_kinase_ec,
       go_experimental,
       has_uniprot_kw    = is_uniprot_kw_kinase,
       supplementary_support,
+      membership_basis,
       kinase_family,
       classification_reason,
-      # taxonomy + bifunctional flag + breadth (rich master, not part of the thin summary)
+      # taxonomy + breadth (rich master, not part of the thin summary)
       kinase_group, kinase_subfamily, derived_family, uniprot_protein_family,
-      dual_protein_nonprotein, n_membership_sources, is_pseudogene,
+      n_membership_sources, is_pseudogene,
       # identifiers + metadata
       hgnc_id, gene_name, entrez_id, uniprot_ids, prev_symbol, alias_symbol,
       enzyme_id_EC, ec_kinase_subclass,

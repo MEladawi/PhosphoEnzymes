@@ -1,0 +1,33 @@
+symbol,catalytic_note,citation
+TRIB1,Tribbles pseudokinase; degenerate catalytic motifs,Eyers & Murphy 2016; Murphy et al. 2014
+TRIB2,Tribbles pseudokinase,Eyers & Murphy 2016
+TRIB3,Tribbles pseudokinase,Eyers & Murphy 2016
+STRADA,STE20-related pseudokinase; LKB1 adaptor,Zeqiraj et al. 2009
+STRADB,STE20-related pseudokinase,Zeqiraj et al. 2009
+ERBB3,HER3 receptor pseudokinase; very weak activity,Shi et al. 2010
+EPHA10,Eph receptor pseudokinase,Kwon et al. 2018
+EPHB6,Eph receptor pseudokinase,Kwon et al. 2018
+PTK7,CCK4 receptor pseudokinase,Boudeau et al. 2006
+RYK,Wnt receptor pseudokinase,Boudeau et al. 2006
+ROR1,ROR receptor; degenerate catalytic residues,Gentile et al. 2011
+ROR2,ROR receptor; degenerate catalytic residues,Gentile et al. 2011
+KSR1,Kinase suppressor of Ras pseudokinase/allosteric,Brennan et al. 2011
+KSR2,Kinase suppressor of Ras pseudokinase/allosteric,Brennan et al. 2011
+ILK,Integrin-linked pseudokinase,Fukuda et al. 2009
+NRBP1,Nuclear receptor-binding pseudokinase,Kerr et al. 2020
+NRBP2,Nuclear receptor-binding pseudokinase,Kerr et al. 2020
+SCYL1,SCY1-like pseudokinase,Eyers & Murphy 2016
+SCYL2,SCY1-like pseudokinase,Eyers & Murphy 2016
+SCYL3,SCY1-like pseudokinase,Eyers & Murphy 2016
+STK40,Pseudokinase; degenerate motifs,Reiterer et al. 2014
+PEAK1,Pseudokinase scaffold (SgK269),Patel et al. 2017
+PEAK3,Pseudokinase scaffold,Lopez et al. 2019
+PRAG1,Pseudokinase scaffold (SgK223),Patel et al. 2017
+MLKL,Necroptosis pseudokinase,Murphy et al. 2013
+CAMKV,CaMK-family pseudokinase,Kwon et al. 2019
+PXK,PX-domain pseudokinase,Reiterer et al. 2014
+ULK4,Unc-51-like pseudokinase,Preuss et al. 2020
+TEX14,Pseudokinase; intercellular bridges,Reiterer et al. 2014
+IRAK2,IRAK pseudokinase,Kawagoe et al. 2008
+IRAK3,IRAK-M pseudokinase,Kawagoe et al. 2008
+VRK3,VRK-family pseudokinase,Scheeff et al. 2009

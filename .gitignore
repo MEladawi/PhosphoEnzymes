@@ -22,6 +22,7 @@ inst/extdata/*
 !inst/extdata/kinhub_facts.tsv
 !inst/extdata/uniprot_phosphatase_KW-0904_human.tsv
 !inst/extdata/chen_phosphatome_facts.tsv
+!inst/extdata/pseudokinases.csv
 
 # Ignore dotfiles (.DS_Store, .Rhistory, .RData, .Rproj.user/, etc.), but keep the
 # repo's own meta files that must stay under version control.
