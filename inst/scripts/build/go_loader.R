@@ -115,3 +115,77 @@ assert_protein_kinase_set_is_propagated <- function(protein_kinase_members) {
   message(sprintf("  [GO] protein kinase activity (GO:0004672): %d members (ancestor-propagated)",
                   member_count))
 }
+
+# Phosphatase GO sets, selected by stable GO accession from the same Ensembl-native GMT. Returns
+# the protein-phosphatase discriminator (the gate's protein signal + override key), the broad
+# phosphatase umbrella (a membership leg), and the non-protein classes used to corroborate
+# substrate typing. The protein set is asserted ancestor-propagated, with a reverse canary.
+load_go_phosphatase_sets <- function(go_gmt_path) {
+  gmt_rows <- str_split(read_lines(go_gmt_path), fixed("\t"))
+  gmt_rows <- gmt_rows[lengths(gmt_rows) >= 3]
+  go_accession_of_row <- map_chr(gmt_rows, function(row) {
+    name_fields <- str_split(row[1], fixed("%"))[[1]]
+    name_fields[length(name_fields)]
+  })
+  ids_by_accession <- map(gmt_rows, ~ .x[-(1:2)])
+  names(ids_by_accession) <- go_accession_of_row
+  ids_for <- function(go_accessions) {
+    present <- go_accessions[go_accessions %in% names(ids_by_accession)]
+    ids_by_accession[present] |> list_c() |> unique()
+  }
+
+  go_sets <- list(
+    phosphatase_activity_umbrella = ids_for("GO:0016791"),  # PHOSPHATASE ACTIVITY
+    protein_phosphatase_activity  = ids_for("GO:0004721"),  # PHOSPHOPROTEIN PHOSPHATASE ACTIVITY
+    lipid_phosphatase = ids_for(c(
+      "GO:0042577",   # lipid phosphatase activity
+      "GO:0052866",   # phosphatidylinositol phosphate phosphatase activity
+      "GO:0016314",   # phosphatidylinositol-3,4,5-trisphosphate 3-phosphatase activity
+      "GO:0004438",   # phosphatidylinositol-3-phosphatase activity
+      "GO:0034595",   # phosphatidylinositol-3,4,5-trisphosphate 5-phosphatase activity
+      "GO:0052744",   # phosphatidylinositol monophosphate phosphatase activity
+      "GO:0008195")), # phosphatidate phosphatase activity
+    nucleotide_phosphatase = ids_for(c(
+      "GO:0008252",   # nucleotidase activity
+      "GO:0008253",   # 5'-nucleotidase activity
+      "GO:0050483")), # 5'-nucleotidase activity (alt)
+    carbohydrate_phosphatase = ids_for(c(
+      "GO:0050308",   # sugar-phosphatase activity
+      "GO:0004346",   # glucose-6-phosphatase activity
+      "GO:0042132")), # fructose 1,6-bisphosphate 1-phosphatase activity
+    inositol_phosphatase = ids_for(c(
+      "GO:0004445",   # inositol-polyphosphate 5-phosphatase activity
+      "GO:0052745",   # inositol phosphate phosphatase activity
+      "GO:0046030"))) # inositol trisphosphate phosphatase activity
+
+  assert_protein_phosphatase_set_is_propagated(go_sets$protein_phosphatase_activity)
+  go_sets
+}
+
+# GO:0004721 must be ancestor-propagated (children: Ser/Thr GO:0004722, Tyr GO:0004725, dual
+# GO:0008138). Forward canaries are child-only protein phosphatases; the reverse canary (PSPH, a
+# small-molecule phosphatase) must be ABSENT, guarding against a script that grants the protein
+# child to every umbrella gene.
+GO_PROTEIN_PHOSPHATASE_CANARIES <- c(
+  PPP1CA = "ENSG00000172531",   # Ser/Thr protein phosphatase (child: GO:0004722)
+  PTPN1  = "ENSG00000196396",   # protein tyrosine phosphatase (child: GO:0004725)
+  DUSP1  = "ENSG00000120129")   # dual-specificity phosphatase (child: GO:0008138)
+GO_PHOSPHATASE_REVERSE_CANARY <- c(PSPH = "ENSG00000146733")  # small-molecule; must NOT be present
+assert_protein_phosphatase_set_is_propagated <- function(protein_phosphatase_members) {
+  member_count <- length(protein_phosphatase_members)
+  if (member_count < 100)
+    stop("GO:0004721 (phosphoprotein phosphatase activity) has only ", member_count, " members; ",
+         "expected ~150+. The GO MF GMT appears not to be ancestor-propagated, which silently ",
+         "breaks the protein-phosphatase gate. Use the ancestor-propagated Bader Lab GMT.")
+  missing_canaries <- GO_PROTEIN_PHOSPHATASE_CANARIES[!(GO_PROTEIN_PHOSPHATASE_CANARIES %in% protein_phosphatase_members)]
+  if (length(missing_canaries))
+    stop("GO:0004721 is missing child-annotated canary protein phosphatase(s): ",
+         paste(names(missing_canaries), collapse = ", "), ". The GMT may not be propagated.")
+  leaked <- GO_PHOSPHATASE_REVERSE_CANARY[GO_PHOSPHATASE_REVERSE_CANARY %in% protein_phosphatase_members]
+  if (length(leaked))
+    stop("Reverse canary failure: small-molecule phosphatase(s) ", paste(names(leaked), collapse = ", "),
+         " appear in GO:0004721 (protein phosphatase activity). The GMT propagation is inverted or ",
+         "contaminated -- a non-protein enzyme must not carry the protein-phosphatase child term.")
+  message(sprintf("  [GO] protein phosphatase activity (GO:0004721): %d members (ancestor-propagated)",
+                  member_count))
+}
