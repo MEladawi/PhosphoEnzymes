@@ -1,64 +1,16 @@
-# helper_code/go_functional_sets.R
-# GO Molecular Function gene sets (Bader Lab EM_Genesets, Ensembl-native GMT). Members
-# are already Ensembl gene IDs, so no Entrez bridge is needed for this leg. Sets are
-# selected by stable GO accession (the 3rd "%"-field of each set name), which is robust
-# to term-name wording. load_go_functional_sets() returns the functional umbrella (a
-# membership leg), the protein-kinase discriminator, and the non-protein classes used
-# to type non-protein kinases.
+# GO Molecular Function gene sets for kinases and phosphatases. Both loaders now receive a
+# resolved class object from resolve_term_sets() (term_sets.R) and delegate accession
+# selection entirely to the curated CSV term sets. The GMT is ancestor-propagated, so each
+# curated parent accession already carries its full subtree of gene members.
 
-load_go_functional_sets <- function(go_gmt_path) {
-  gmt_rows <- str_split(read_lines(go_gmt_path), fixed("\t"))
-  gmt_rows <- gmt_rows[lengths(gmt_rows) >= 3]
-  # Set-name field looks like "PROTEIN KINASE ACTIVITY%GOMF%GO:0004672"; take the GO id.
-  go_accession_of_row <- map_chr(gmt_rows, function(row) {
-    name_fields <- str_split(row[1], fixed("%"))[[1]]
-    name_fields[length(name_fields)]
-  })
-  ensembl_ids_by_go_accession <- map(gmt_rows, ~ .x[-(1:2)])
-  names(ensembl_ids_by_go_accession) <- go_accession_of_row
-
-  # Union of the Ensembl members across one or more GO accessions; absent ones are skipped.
-  ensembl_ids_for_go_accessions <- function(go_accessions) {
-    present <- go_accessions[go_accessions %in% names(ensembl_ids_by_go_accession)]
-    missing <- setdiff(go_accessions, present)
-    if (length(missing))
-      message("    [GO] not in this release, skipped: ", paste(missing, collapse = ", "))
-    ensembl_ids_by_go_accession[present] |> list_c() |> unique()
-  }
-
+# Build the kinase GO sets from the resolved kinase term set (the GMT is ancestor-propagated,
+# so each accession already carries its subtree). The protein set is asserted propagated.
+load_go_functional_sets <- function(go_gmt_path, resolved_kinase) {
   go_sets <- list(
-    kinase_activity_umbrella = ensembl_ids_for_go_accessions("GO:0016301"),  # KINASE ACTIVITY
-    protein_kinase_activity  = ensembl_ids_for_go_accessions("GO:0004672"),  # PROTEIN KINASE ACTIVITY
-    lipid_kinase = ensembl_ids_for_go_accessions(c(
-      "GO:0001727",   # lipid kinase activity
-      "GO:0052742",   # phosphatidylinositol kinase activity
-      "GO:0016303",   # 1-phosphatidylinositol-3-kinase activity
-      "GO:0046934",   # 1-phosphatidylinositol-4,5-bisphosphate 3-kinase activity
-      "GO:0035005",   # 1-phosphatidylinositol-4-phosphate 3-kinase activity
-      "GO:0016308",   # 1-phosphatidylinositol-4-phosphate 5-kinase activity
-      "GO:0004143")), # ATP-dependent diacylglycerol kinase activity
-    inositol_phosphate_kinase = ensembl_ids_for_go_accessions(c(
-      "GO:0000828",   # inositol hexakisphosphate kinase activity
-      "GO:0051766",   # inositol trisphosphate kinase activity
-      "GO:0180030",   # inositol phosphate kinase activity
-      "GO:0000827")), # inositol-1,3,4,5,6-pentakisphosphate kinase activity
-    carbohydrate_kinase = ensembl_ids_for_go_accessions(c(
-      "GO:0019200",   # carbohydrate kinase activity
-      "GO:0004396",   # hexokinase activity
-      "GO:0004340",   # glucokinase activity
-      "GO:0008443")), # phosphofructokinase activity
-    nucleotide_kinase = ensembl_ids_for_go_accessions(c(
-      "GO:0019206",   # nucleoside kinase activity
-      "GO:0050145",   # nucleoside monophosphate kinase activity
-      "GO:0004550",   # nucleoside diphosphate kinase activity
-      "GO:0019205",   # nucleobase-containing compound kinase activity
-      "GO:0019136",   # deoxynucleoside kinase activity
-      "GO:0047507",   # deoxynucleoside phosphate kinase activity, ATP as phosphate donor
-      "GO:0036431",   # dCMP kinase activity
-      "GO:0004385",   # GMP kinase activity
-      "GO:0004017")), # AMP kinase activity
-    creatine_kinase = ensembl_ids_for_go_accessions("GO:0004111"))  # creatine kinase activity
-
+    kinase_activity_umbrella = resolved_kinase$go_umbrella_ids,
+    protein_kinase_activity  = resolved_kinase$go_protein_ids,
+    nonprotein_all           = resolved_kinase$go_nonprotein_ids,
+    nonprotein_by_subtype    = resolved_kinase$go_nonprotein_subtype_ids)
   assert_protein_kinase_set_is_propagated(go_sets$protein_kinase_activity)
   go_sets
 }
@@ -116,48 +68,14 @@ assert_protein_kinase_set_is_propagated <- function(protein_kinase_members) {
                   member_count))
 }
 
-# Phosphatase GO sets, selected by stable GO accession from the same Ensembl-native GMT. Returns
-# the protein-phosphatase discriminator (the gate's protein signal + override key), the broad
-# phosphatase umbrella (a membership leg), and the non-protein classes used to corroborate
-# substrate typing. The protein set is asserted ancestor-propagated, with a reverse canary.
-load_go_phosphatase_sets <- function(go_gmt_path) {
-  gmt_rows <- str_split(read_lines(go_gmt_path), fixed("\t"))
-  gmt_rows <- gmt_rows[lengths(gmt_rows) >= 3]
-  go_accession_of_row <- map_chr(gmt_rows, function(row) {
-    name_fields <- str_split(row[1], fixed("%"))[[1]]
-    name_fields[length(name_fields)]
-  })
-  ids_by_accession <- map(gmt_rows, ~ .x[-(1:2)])
-  names(ids_by_accession) <- go_accession_of_row
-  ids_for <- function(go_accessions) {
-    present <- go_accessions[go_accessions %in% names(ids_by_accession)]
-    ids_by_accession[present] |> list_c() |> unique()
-  }
-
+# Phosphatase GO sets from the resolved phosphatase term set. Protein set asserted propagated
+# (incl. its reverse canary).
+load_go_phosphatase_sets <- function(go_gmt_path, resolved_phosphatase) {
   go_sets <- list(
-    phosphatase_activity_umbrella = ids_for("GO:0016791"),  # PHOSPHATASE ACTIVITY
-    protein_phosphatase_activity  = ids_for("GO:0004721"),  # PHOSPHOPROTEIN PHOSPHATASE ACTIVITY
-    lipid_phosphatase = ids_for(c(
-      "GO:0042577",   # lipid phosphatase activity
-      "GO:0052866",   # phosphatidylinositol phosphate phosphatase activity
-      "GO:0016314",   # phosphatidylinositol-3,4,5-trisphosphate 3-phosphatase activity
-      "GO:0004438",   # phosphatidylinositol-3-phosphatase activity
-      "GO:0034595",   # phosphatidylinositol-3,4,5-trisphosphate 5-phosphatase activity
-      "GO:0052744",   # phosphatidylinositol monophosphate phosphatase activity
-      "GO:0008195")), # phosphatidate phosphatase activity
-    nucleotide_phosphatase = ids_for(c(
-      "GO:0008252",   # nucleotidase activity
-      "GO:0008253",   # 5'-nucleotidase activity
-      "GO:0050483")), # 5'-nucleotidase activity (alt)
-    carbohydrate_phosphatase = ids_for(c(
-      "GO:0050308",   # sugar-phosphatase activity
-      "GO:0004346",   # glucose-6-phosphatase activity
-      "GO:0042132")), # fructose 1,6-bisphosphate 1-phosphatase activity
-    inositol_phosphatase = ids_for(c(
-      "GO:0004445",   # inositol-polyphosphate 5-phosphatase activity
-      "GO:0052745",   # inositol phosphate phosphatase activity
-      "GO:0046030"))) # inositol trisphosphate phosphatase activity
-
+    phosphatase_activity_umbrella = resolved_phosphatase$go_umbrella_ids,
+    protein_phosphatase_activity  = resolved_phosphatase$go_protein_ids,
+    nonprotein_all                = resolved_phosphatase$go_nonprotein_ids,
+    nonprotein_by_subtype         = resolved_phosphatase$go_nonprotein_subtype_ids)
   assert_protein_phosphatase_set_is_propagated(go_sets$protein_phosphatase_activity)
   go_sets
 }

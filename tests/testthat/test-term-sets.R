@@ -70,3 +70,18 @@ test_that("validate_term_set passes the default set and catches seeded faults", 
   bad_issues <- validate_term_set(bad)
   expect_true(any(bad_issues$severity == "error" & grepl("overlap", bad_issues$message)))
 })
+
+test_that("term-set GO selection covers the frozen non-protein kinase panel", {
+  gmt <- file.path(extdata_dir(), "go_mf_genesets_with_iea_ensembl.gmt")
+  skip_if_not(file.exists(gmt), "GMT snapshot absent")
+  source(build_file("utils.R"),     local = TRUE)
+  source(build_file("term_sets.R"), local = TRUE)
+  ts  <- load_term_sets(extdata_dir())
+  res <- resolve_term_sets(ts, gmt)
+  h <- readr::read_tsv(file.path(extdata_dir(), "hgnc_complete_set.txt"), show_col_types = FALSE)
+  ensg <- function(sym) h$ensembl_gene_id[match(sym, h$symbol)]
+  for (sym in c("PIP4K2A","PIP4K2B","PIP4K2C","PIKFYVE","PI4KA","SPHK1","DGKA")) {
+    expect_true(ensg(sym) %in% res$kinase$go_nonprotein_ids,
+                info = paste(sym, "should be in go_nonprotein_ids"))
+  }
+})
