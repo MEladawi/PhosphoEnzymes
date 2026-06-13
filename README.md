@@ -10,14 +10,15 @@ keyed on base Ensembl gene IDs and typed by substrate class.
 ```r
 library(PhosphoEnzymes)
 get_kinases()                  # all kinases, one row per gene, typed by substrate
-get_kinases(mode = "strict")   # canonical set (>= 1 independent evidence axis)
+get_kinases(mode = "strict")   # canonical set (>= 1 evidence dimension)
 ```
 
 ## Evidence model
 
-`n_independent_evidence_axes` (0-2) counts independent evidence **types**:
+`n_evidence_dimensions` (0-2) counts distinct evidence **classes**:
 (1) a structural/evolutionary sequence-family catalog and (2) a protein-specific
-4-digit EC. It is the rigor metric, and the word *independent* is literally true.
+4-digit EC. It is the rigor metric. The two are distinct in kind, not statistically
+independent (the catalogs and EC share a literature ecosystem).
 `evidence_tier` (Gold/Silver/Bronze/Provisional) is a practical heuristic: Gold
 needs both axes; Silver one axis plus supplementary support (experimental GO or a
 reviewed UniProt keyword); Bronze one axis without it; Provisional none. It is

@@ -1,9 +1,9 @@
 #' Access the human kinase reference table
 #'
 #' @param mode `"comprehensive"` (the full membership union, default) or
-#'   `"strict"` (the canonical set: genes with at least one independent
-#'   evidence axis, i.e. an expert structural catalog and/or a protein-specific
-#'   EC; equivalently `curated_core == TRUE` / not Provisional).
+#'   `"strict"` (the canonical set: genes with at least one evidence dimension,
+#'   i.e. an expert structural catalog and/or a protein-specific EC; equivalently
+#'   `curated_core == TRUE` / not Provisional).
 #' @return A [tibble][tibble::tibble] of human kinases, one row per gene.
 #' @examples
 #' k <- get_kinases()
@@ -22,9 +22,9 @@ get_kinases <- function(mode = c("comprehensive", "strict")) {
 .pe_get_class <- function(dataset, mode) {
   df <- .pe_load(dataset)
   if (mode == "strict") {
-    # Strict = canonical set: at least one independent evidence axis.
+    # Strict = canonical set: at least one evidence dimension.
     # Equivalent to curated_core == TRUE / evidence_tier != "Provisional".
-    df <- df[df$n_independent_evidence_axes >= 1L, , drop = FALSE]
+    df <- df[df$n_evidence_dimensions >= 1L, , drop = FALSE]
   }
   df
 }

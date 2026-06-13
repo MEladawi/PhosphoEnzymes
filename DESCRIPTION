@@ -12,7 +12,7 @@ Description: A reproducible reference resource for the human phosphorylation
     typed by substrate class (protein vs lipid / nucleotide / carbohydrate)
     via a function-first gate that keeps sequence-family membership as evidence
     rather than letting it override substrate (the PI3K / PTEN principle).
-    Each gene carries a rigor metric counting independent evidence types
+    Each gene carries a rigor metric counting distinct evidence classes
     (structural/evolutionary catalog and protein-specific EC) and a practical
     evidence_tier. Built tables ship as package data; the deterministic
     regeneration pipeline lives in inst/scripts. Package code is released under
@@ -54,3 +54,4 @@ VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Config/testthat/edition: 3
+LazyData: true

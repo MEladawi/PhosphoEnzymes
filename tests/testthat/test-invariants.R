@@ -23,7 +23,7 @@ test_that("no diacylglycerol kinase is a pure protein kinase", {
   k <- pe_kinases()
   fam <- k[k$symbol %in% PE_DGK_FAMILY, , drop = FALSE]
   skip_if(nrow(fam) == 0L, "no DGK-family members present")
-  expect_true(all(!fam$acts_on_protein | fam$dual_protein_and_nonprotein))
+  expect_true(all(!fam$acts_on_protein | fam$dual_protein_nonprotein))
 })
 
 test_that("no hexokinase is a protein kinase", {
@@ -63,7 +63,7 @@ test_that("no classical small-molecule phosphatase clears the protein gate", {
   expect_false(any(sm$acts_on_protein))
 })
 
-test_that("every protein-acting phosphatase has at least one independent axis", {
+test_that("every protein-acting phosphatase has at least one evidence dimension", {
   # A protein call should never rest on supplementary-only evidence (GO/keyword
   # without any catalog or protein-EC). Such genes would be Provisional, which
   # should not coexist with a confident protein typing in the curated core.
@@ -90,10 +90,10 @@ test_that("protein-kinase and protein-phosphatase counts are within expected ran
 
 test_that("tier monotonicity holds: Gold implies both axes, Provisional implies none", {
   for (df in list(pe_kinases(), pe_phosphat())) {
-    expect_true(all(df$n_independent_evidence_axes[df$evidence_tier == "Gold"] == 2L))
-    expect_true(all(df$n_independent_evidence_axes[df$evidence_tier == "Provisional"] == 0L))
+    expect_true(all(df$n_evidence_dimensions[df$evidence_tier == "Gold"] == 2L))
+    expect_true(all(df$n_evidence_dimensions[df$evidence_tier == "Provisional"] == 0L))
     # Silver/Bronze are exactly the single-axis genes
-    one_axis <- df$n_independent_evidence_axes == 1L
+    one_axis <- df$n_evidence_dimensions == 1L
     expect_true(all(df$evidence_tier[one_axis] %in% c("Silver", "Bronze")))
   }
 })

@@ -63,17 +63,20 @@ load_go_functional_sets <- function(go_gmt_path) {
   go_sets
 }
 
-# Genes carrying NON-ELECTRONIC GO kinase-activity support, read from the no-IEA GMT variant
-# (the upstream distribution with IEA / Inferred-from-Electronic-Annotation evidence stripped).
-# This is the file-level proxy for `go_experimental` in the evidence tier: membership here
-# means the gene has at least one experimental/curated GO kinase-activity annotation, not merely
-# an electronic one. Returns the union of the kinase-activity umbrella (GO:0016301) and protein-
-# kinase-activity (GO:0004672) members. Deliberately does NOT run the propagation assertion -- the
-# no-IEA protein set is legitimately smaller than the IEA-inclusive one. Returns character(0) if
-# the no-IEA file is absent, in which case `go_experimental` is FALSE for every gene.
-load_go_experimental_ids <- function(no_iea_gmt_path) {
+# Genes carrying NON-ELECTRONIC GO activity support, read from the no-IEA GMT variant (the
+# upstream distribution with IEA / Inferred-from-Electronic-Annotation evidence stripped). This
+# is the file-level proxy for experimental GO support: membership in a given accession's no-IEA
+# set means the gene has at least one experimental/curated annotation to that term, not merely an
+# electronic one. `go_accessions` selects which terms to union (default: the kinase umbrella
+# GO:0016301 + protein-kinase GO:0004672, the supplementary support signal); pass a single
+# protein-activity accession (GO:0004672 kinase, GO:0004721 phosphatase) to get the experimental
+# protein set the substrate override keys on. Deliberately does NOT run the propagation assertion
+# -- the no-IEA protein set is legitimately smaller than the IEA-inclusive one. Returns
+# character(0) if the no-IEA file is absent, so the experimental signal is then FALSE everywhere.
+load_go_experimental_ids <- function(no_iea_gmt_path,
+                                     go_accessions = c("GO:0016301", "GO:0004672")) {
   if (!file.exists(no_iea_gmt_path)) {
-    message("    [GO] no-IEA variant absent; go_experimental = FALSE for all genes")
+    message("    [GO] no-IEA variant absent; experimental GO support = FALSE for all genes")
     return(character(0))
   }
   gmt_rows <- str_split(read_lines(no_iea_gmt_path), fixed("\t"))
@@ -82,8 +85,8 @@ load_go_experimental_ids <- function(no_iea_gmt_path) {
     name_fields <- str_split(row[1], fixed("%"))[[1]]
     name_fields[length(name_fields)]
   })
-  kinase_activity_rows <- go_accession_of_row %in% c("GO:0016301", "GO:0004672")
-  gmt_rows[kinase_activity_rows] |> map(~ .x[-(1:2)]) |> list_c() |> unique()
+  selected_rows <- go_accession_of_row %in% go_accessions
+  gmt_rows[selected_rows] |> map(~ .x[-(1:2)]) |> list_c() |> unique()
 }
 
 # The whole functional gate rests on GO:0004672 (protein kinase activity) being

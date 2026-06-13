@@ -23,7 +23,7 @@ harmonize_kinases_to_package_schema <- function(kinases_table) {
       acts_on_protein   = protein_kinase,
       substrate_type,
       substrate_subtype = kinase_type,
-      n_independent_evidence_axes,
+      n_evidence_dimensions,
       evidence_tier,
       curated_core,
       in_structural_catalog,
@@ -35,7 +35,7 @@ harmonize_kinases_to_package_schema <- function(kinases_table) {
       classification_reason,
       # taxonomy + bifunctional flag + breadth (rich master, not part of the thin summary)
       kinase_group, kinase_subfamily, derived_family, uniprot_protein_family,
-      dual_protein_and_nonprotein, n_membership_sources, is_pseudogene,
+      dual_protein_nonprotein, n_membership_sources, is_pseudogene,
       # identifiers + metadata
       hgnc_id, gene_name, entrez_id, uniprot_ids, prev_symbol, alias_symbol,
       enzyme_id_EC, ec_kinase_subclass,

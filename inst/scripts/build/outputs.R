@@ -56,8 +56,8 @@ write_outputs <- function(kinases_table, unmapped_table, output_dir, source_mani
   write_lines(kinases_table$ensembl_gene_id, file.path(output_dir, "kinases_ensembl_all.txt"))
   write_lines(kinases_table$ensembl_gene_id[kinases_table$protein_kinase],
               file.path(output_dir, "kinases_ensembl_protein.txt"))
-  # "highconf" list = the curated-core (strict-mode) population: genes with >=1 independent
-  # evidence axis (expert catalog or protein-EC), i.e. evidence_tier != Provisional.
+  # "highconf" list = the curated-core (strict-mode) population: genes with >=1 evidence
+  # dimension (expert catalog or protein-EC), i.e. evidence_tier != Provisional.
   write_lines(kinases_table$ensembl_gene_id[kinases_table$curated_core],
               file.path(output_dir, "kinases_ensembl_highconf.txt"))
   write_lines(kinases_table$hgnc_symbol, file.path(output_dir, "kinases_symbols_all.txt"))
@@ -130,10 +130,10 @@ write_outputs <- function(kinases_table, unmapped_table, output_dir, source_mani
     "  uniprot_protein_family : raw UniProt 'Protein families' string.",
     "  protein_kinase ...... TRUE for protein kinases; FALSE for small-molecule",
     "                        kinases (lipid / sugar / nucleotide / etc.).",
-    "  n_independent_evidence_axes : count of independent evidence TYPES confirming a protein-",
+    "  n_evidence_dimensions : count of distinct evidence CLASSES confirming a protein-",
     "                        directed enzyme: (1) structural/evolutionary sequence-family catalog,",
     "                        (2) biochemical protein-specific EC (2.7.10-14). 0-2. The rigor metric.",
-    "  curated_core ........ n_independent_evidence_axes >= 1 (in a structural catalog or carrying",
+    "  curated_core ........ n_evidence_dimensions >= 1 (in a structural catalog or carrying",
     "                        a protein-EC number). This is the strict-mode population.",
     "  go_experimental ..... TRUE if the gene has non-electronic (experimental/curated) GO",
     "                        kinase-activity support (no-IEA GMT). Supplementary, not counted.",
@@ -143,7 +143,7 @@ write_outputs <- function(kinases_table, unmapped_table, output_dir, source_mani
     "                        supplementary support. Gold (both axes) > Silver (one axis +",
     "                        supplementary_support) > Bronze (one axis) > Provisional (neither).",
     "                        Not a probability, not an evidence count, not a confidence score.",
-    "  dual_protein_and_nonprotein : protein kinase that also has a non-protein",
+    "  dual_protein_nonprotein : protein kinase that also has a non-protein",
     "                        kinase function (e.g. PI3K family, NME).",
     "",
     "COUNTS BY kinase_type:",
@@ -174,7 +174,7 @@ qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_
                tier_counts[["Gold"]], tier_counts[["Silver"]],
                tier_counts[["Bronze"]], tier_counts[["Provisional"]]))
   emit(sprintf("Curated core (strict) .. %d\n", sum(kinases_table$curated_core)))
-  emit(sprintf("Dual (protein+nonprot).. %d\n", sum(kinases_table$dual_protein_and_nonprotein)))
+  emit(sprintf("Dual (protein+nonprot).. %d\n", sum(kinases_table$dual_protein_nonprotein)))
   emit(sprintf("Pseudogenes ............ %d\n", sum(kinases_table$is_pseudogene)))
   emit(sprintf("Unmapped (reported) .... %d\n", nrow(distinct(unmapped_table))))
   if (verbose) {
@@ -235,7 +235,7 @@ qc_report <- function(kinases_table, unmapped_table, verbose = TRUE, go_protein_
     list(label = "DGK-family genes are never pure protein kinases (lipid or dual)",
          in_family = str_detect(kinases_table$hgnc_symbol, "^DGK") |
                      uniprot_family_is("diacylglycerol kinase"),
-         holds     = function(rows) all(!rows$protein_kinase | rows$dual_protein_and_nonprotein)))
+         holds     = function(rows) all(!rows$protein_kinase | rows$dual_protein_nonprotein)))
 
   emit("\nClass-level invariants:\n")
   invariant_results <- map_lgl(class_invariants, \(invariant) {

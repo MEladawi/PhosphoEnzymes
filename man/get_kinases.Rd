@@ -8,9 +8,9 @@ get_kinases(mode = c("comprehensive", "strict"))
 }
 \arguments{
 \item{mode}{\code{"comprehensive"} (the full membership union, default) or
-\code{"strict"} (the canonical set: genes with at least one independent
-evidence axis, i.e. an expert structural catalog and/or a protein-specific
-EC; equivalently \code{curated_core == TRUE} / not Provisional).}
+\code{"strict"} (the canonical set: genes with at least one evidence dimension,
+i.e. an expert structural catalog and/or a protein-specific EC; equivalently
+\code{curated_core == TRUE} / not Provisional).}
 }
 \value{
 A \link[tibble:tibble]{tibble} of human kinases, one row per gene.

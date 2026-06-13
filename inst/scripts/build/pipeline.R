@@ -74,7 +74,7 @@ build_kinase_list <- function(refresh_data    = TRUE,
     message("Loading sources ...")
     go_sets           <- load_go_functional_sets(path_for("go_mf_genesets"))
     # Experimental-GO proxy for the evidence tier: membership in the NO-IEA GO kinase-activity
-    # set (non-electronic annotations only). Loaded from the no-IEA GMT independently of whichever
+    # set (non-electronic annotations only). Loaded from the no-IEA GMT separately from whichever
     # GO variant feeds the gate, so the signal is available either way (file-level proxy).
     go_experimental_ids <- load_go_experimental_ids(
       file.path(data_in_dir, GO_GENESET_VARIANTS$no_iea$filename))

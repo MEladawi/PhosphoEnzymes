@@ -8,7 +8,7 @@
 #' usage.
 #'
 #' @section Evidence model (brief):
-#' `n_independent_evidence_axes` (0-2) counts independent evidence *types*:
+#' `n_evidence_dimensions` (0-2) counts distinct evidence *classes*:
 #' (1) a structural/evolutionary sequence-family catalog and (2) a
 #' protein-specific 4-digit EC. It is the rigor metric. `evidence_tier`
 #' (Gold/Silver/Bronze/Provisional) is a practical prioritization heuristic

@@ -32,7 +32,7 @@ table(k$substrate_type)
 ```
 
 ```{r strict-example, eval = FALSE}
-get_kinases(mode = "strict")   # canonical set: >= 1 independent evidence axis
+get_kinases(mode = "strict")   # canonical set: >= 1 evidence dimension
 ```
 
 The phosphatase master, the unified phospho-enzyme summary, and the
@@ -42,7 +42,7 @@ forthcoming.
 
 # The evidence model
 
-`n_independent_evidence_axes` (0-2) counts independent evidence **types**:
+`n_evidence_dimensions` (0-2) counts distinct evidence **classes**:
 
 1. **Structural / evolutionary catalog** -- membership in an expert
    sequence-family catalog (`in_structural_catalog`).

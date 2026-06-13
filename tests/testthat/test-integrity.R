@@ -35,7 +35,7 @@ test_that("shared columns in the summary match the masters row-for-row", {
   p  <- pe_phosphat()
   pe <- pe_unified()
   shared <- c("acts_on_protein", "substrate_type",
-              "n_independent_evidence_axes", "evidence_tier", "curated_core")
+              "n_evidence_dimensions", "evidence_tier", "curated_core")
 
   master <- rbind(
     k[, c("ensembl_gene_id", shared)],

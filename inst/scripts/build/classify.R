@@ -50,23 +50,26 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       n_membership_sources = is_pkinfam + is_manning + is_kinhub + is_go_kinase_activity +
                              is_ec_kinase + is_uniprot_kw_kinase + is_idg_dark_kinase,
 
-      # Independent evidence axes: the rigor metric counts independent KINDS of confirmation,
-      # not independent databases. Exactly two evidence TYPES answer genuinely different questions:
+      # Evidence dimensions: the rigor metric counts distinct KINDS of confirmation, not
+      # databases. Exactly two evidence classes answer genuinely different questions:
       #   Axis 1 -- structural/evolutionary catalog: does the gene carry the kinase sequence
       #             family? pkinfam / Manning / KinHub all answer this from overlapping
-      #             scholarship, so they roll up into ONE axis -- counting them separately would
-      #             inflate correlated agreement (the database-fame artifact that also demotes
-      #             GO / UniProt).
+      #             scholarship, so they roll up into ONE dimension -- counting them separately
+      #             would inflate correlated agreement (the database-fame artifact that also
+      #             demotes GO / UniProt).
       #   Axis 2 -- biochemical: a protein-specific EC (2.7.10-14) proving protein-directed
       #             catalysis. Non-protein EC still types substrate below but never scores here.
-      # So axes == 2 means structure AND biochemistry independently agree (what "Gold" certifies).
+      # The two are distinct in kind, not statistically independent (catalogs and EC share a
+      # literature ecosystem). dimensions == 2 means structure AND biochemistry both confirm a
+      # bona fide protein kinase (what "Gold" certifies) -- a claim about the enzyme-class call,
+      # not the substrate call.
       in_structural_catalog       = is_pkinfam | is_manning | is_kinhub,
-      n_independent_evidence_axes = as.integer(in_structural_catalog) +
+      n_evidence_dimensions = as.integer(in_structural_catalog) +
                                     as.integer(is_protein_kinase_ec),
-      # curated_core = standing in at least one independent axis (a structural catalog or a
+      # curated_core = standing in at least one evidence dimension (a structural catalog or a
       # protein-EC number). The comprehensive-only remainder (GO/UniProt/IDG-only) is
       # curated_core FALSE and tiers as Provisional; this is the strict-mode population.
-      curated_core = n_independent_evidence_axes >= 1L,
+      curated_core = n_evidence_dimensions >= 1L,
       # Supplementary support: experimental GO support OR the reviewed UniProt kinase keyword.
       # Neither counts toward the axes; together they split Silver from Bronze among single-axis
       # genes. It cannot manufacture standing from zero axes -- a zero-axis gene stays Provisional.
@@ -82,10 +85,14 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
         .default        = NA_character_),
       protein_kinase_evidence = in_protein_kinase_go | is_pkinfam | is_manning | is_kinhub |
                                 is_protein_kinase_ec,
-      # A non-protein class wins only if no reliable protein signal (GO protein activity or a
-      # protein-kinase EC subclass, never lipid); pkinfam/Manning/KinHub lump PI3/PI4 so are
-      # not trusted to override here.
-      nonprotein_wins = !is.na(nonprotein_class) & !in_protein_kinase_go & !is_protein_kinase_ec,
+      # A non-protein class wins unless the gene carries protein-kinase activity GO -- the
+      # substrate-accurate signal. The override keys on GO only, never on protein-EC: EC is valid
+      # rigor evidence (Axis 2) but is promiscuously assigned across substrate classes, so it
+      # cannot be a clean substrate authority (symmetric with the phosphatase gate). Catalog
+      # membership (pkinfam/Manning/KinHub, which lump PI3/PI4) is lineage, never an override.
+      # The reverse GO canaries (a pure lipid kinase like PI4KA must not carry protein-kinase GO)
+      # guard against an electronic mis-annotation flipping a non-protein enzyme to protein.
+      nonprotein_wins = !is.na(nonprotein_class) & !in_protein_kinase_go,
       protein_kinase  = !nonprotein_wins & protein_kinase_evidence,
       # EC-subclass fallback type (checking a code within each gene's EC subclass list).
       ec_fallback_type = case_when(
@@ -116,7 +123,7 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
         protein_kinase  ~ str_c("protein kinase: ", protein_evidence_label),
         .default        = str_c(ec_fallback_type, ": EC-subclass fallback; no protein or non-protein GO evidence")),
 
-      dual_protein_and_nonprotein = protein_kinase & !is.na(nonprotein_class),
+      dual_protein_nonprotein = protein_kinase & !is.na(nonprotein_class),
       # evidence_tier: a documented PRIORITIZATION HEURISTIC over the two axes plus
       # supplementary support -- NOT a probability, evidence count, or confidence score. Gold
       # requires BOTH axes (structure and biochemistry agree); Silver/Bronze split the one-axis
@@ -125,9 +132,9 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       # literature provenance with the catalogs, so admitting them would reintroduce the coupling
       # the axis count exists to exclude.
       evidence_tier = case_when(
-        n_independent_evidence_axes == 2L                         ~ "Gold",
-        n_independent_evidence_axes == 1L & supplementary_support ~ "Silver",
-        n_independent_evidence_axes == 1L                         ~ "Bronze",
+        n_evidence_dimensions == 2L                         ~ "Gold",
+        n_evidence_dimensions == 1L & supplementary_support ~ "Silver",
+        n_evidence_dimensions == 1L                         ~ "Bronze",
         .default                                                  = "Provisional"),
       is_pseudogene = str_detect(coalesce(locus_type, ""), regex("pseudogene", ignore_case = TRUE)),
       ec_kinase_subclass = map_chr(matched_kinase_subclasses, \(x) paste(x, collapse = ", ")),
@@ -154,7 +161,7 @@ classify_kinases <- function(universe_ensembl_ids, hgnc_bridge, go_sets, ec, mem
       hgnc_symbol = symbol, hgnc_id, gene_name = name,
       kinase_type, protein_kinase,
       kinase_group, kinase_family, derived_family, kinase_subfamily, uniprot_protein_family,
-      dual_protein_and_nonprotein, evidence_tier, n_independent_evidence_axes,
+      dual_protein_nonprotein, evidence_tier, n_evidence_dimensions,
       go_experimental, supplementary_support,
       in_structural_catalog, is_protein_kinase_ec, classification_reason,
       n_membership_sources, curated_core,

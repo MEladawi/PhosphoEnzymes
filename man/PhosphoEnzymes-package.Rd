@@ -15,7 +15,7 @@ usage.
 }
 \section{Evidence model (brief)}{
 
-\code{n_independent_evidence_axes} (0-2) counts independent evidence \emph{types}:
+\code{n_evidence_dimensions} (0-2) counts distinct evidence \emph{classes}:
 (1) a structural/evolutionary sequence-family catalog and (2) a
 protein-specific 4-digit EC. It is the rigor metric. \code{evidence_tier}
 (Gold/Silver/Bronze/Provisional) is a practical prioritization heuristic

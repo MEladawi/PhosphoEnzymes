@@ -15,16 +15,17 @@ substrates (equivalently \code{substrate_type == "protein"}).}
 "carbohydrate", "other".}
 \item{substrate_subtype}{Finer-grained substrate label (e.g.
 "Inositol-phosphate kinase", "Creatine kinase").}
-\item{n_independent_evidence_axes}{Integer 0-2. Count of independent evidence
-types confirming a protein-directed enzyme: (1) structural/evolutionary
-sequence-family catalog, (2) biochemical protein-specific EC. The rigor
-metric.}
+\item{n_evidence_dimensions}{Integer 0-2. Count of distinct evidence classes
+confirming a bona fide kinase (the enzyme-class call): (1) structural/
+evolutionary sequence-family catalog, (2) biochemical protein-specific EC.
+Distinct in kind, not statistically independent (catalogs and EC share a
+literature ecosystem). The rigor metric.}
 \item{evidence_tier}{"Gold" / "Silver" / "Bronze" / "Provisional". Practical
-prioritization heuristic over the two axes plus supplementary GO/UniProt-
-keyword support. Not a probability, not an evidence count, not a confidence
-score.}
-\item{curated_core}{Logical. TRUE if the gene has >= 1 independent axis (i.e.
-not Provisional / not comprehensive-only).}
+prioritization heuristic over the two evidence classes plus supplementary
+GO/UniProt-keyword support. Not a probability, not an evidence count, not a
+confidence score.}
+\item{curated_core}{Logical. TRUE if the gene has >= 1 evidence dimension
+(i.e. not Provisional / not comprehensive-only).}
 \item{in_structural_catalog}{Logical. Axis 1: Manning / KinHub / kinase.com /
 pkinfam.}
 \item{is_protein_kinase_ec}{Logical. Axis 2: a protein-specific EC
@@ -41,7 +42,7 @@ splits Silver from Bronze among single-axis genes.}
 \item{derived_family}{Non-Manning family descriptor for genes lacking a
 \code{kinase_family} (from the UniProt family string or the GO class).}
 \item{uniprot_protein_family}{Raw UniProt "Protein families" string.}
-\item{dual_protein_and_nonprotein}{Logical. A protein kinase that also has a
+\item{dual_protein_nonprotein}{Logical. A protein kinase that also has a
 non-protein kinase activity (e.g. PI3K family, NME1, DGKQ).}
 \item{n_membership_sources}{Integer 0-7. Count of the per-source \verb{is_*}
 flags; informational breadth-of-support (not the rigor metric).}
