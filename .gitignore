@@ -16,3 +16,4 @@ inst/extdata/*
 !.gitignore
 !.gitattributes
 !.Rbuildignore
+!.github/
