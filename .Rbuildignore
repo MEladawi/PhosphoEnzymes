@@ -20,6 +20,8 @@
 ^inst/extdata/kinase\.com_manning_list\.xls$
 ^inst/extdata/IDG_dark_kinase_list\.csv$
 ^inst/extdata/kinhub_facts\.tsv$
+^inst/extdata/uniprot_phosphatase_KW-0904_human\.tsv$
+^inst/extdata/chen_phosphatome_facts\.tsv$
 # The raw KinHub web page is never redistributed (no license); it is kept locally only
 # to regenerate kinhub_facts.tsv. Exclude it from the tarball as well as from git.
 ^inst/extdata/kinhub_kinases\.html$
