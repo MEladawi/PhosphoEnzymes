@@ -19,27 +19,33 @@ phosphorylation machinery, keyed on base Ensembl gene IDs and typed by substrate
 class. Enzymes are typed by what they act on; sequence-family membership is
 evidence of lineage, not an override of substrate.
 
-The kinase table is available now via `get_kinases()`. The phosphatase table, the
-derived unified summary, and the regulatory-subunit companion are forthcoming;
-their accessors are present and return data once those tables are built.
+Both classes ship now: kinases via `get_kinases()`, protein phosphatases via
+`get_phosphatases()`, and a thin class-agnostic summary spanning both via
+`get_phosphoenzymes()`. The non-catalytic regulatory-subunit companion
+(`get_phosphatase_regulators()`) is a forthcoming addition.
 
 # Accessing the tables
 
 ```{r load-kinases}
 k <- get_kinases()
-nrow(k)
+p <- get_phosphatases()
+c(kinases = nrow(k), phosphatases = nrow(p))
 # substrate is carried as co-equal columns; empty nonprotein_substrate_type = protein-only
 table(protein = k$acts_on_protein, nonprotein = k$nonprotein_substrate_type)
 ```
 
 ```{r strict-example, eval = FALSE}
-get_kinases(mode = "strict")   # canonical set: >= 1 evidence dimension
+get_kinases(mode = "strict")        # canonical set: >= 1 evidence dimension
+get_phosphatases(mode = "strict")
 ```
 
-The phosphatase master, the unified phospho-enzyme summary, and the
-regulatory-subunit companion (with their `get_phosphatases()`,
-`get_phosphoenzymes()`, and `get_phosphatase_regulators()` accessors) are
-forthcoming.
+The unified summary spans both classes; recover class-specific taxonomy with a
+class-routed join back to a master:
+
+```{r unified}
+pe <- get_phosphoenzymes()
+table(pe$regulator_class, pe$acts_on_protein)
+```
 
 # The evidence model
 

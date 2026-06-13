@@ -6,12 +6,13 @@
 \alias{PhosphoEnzymes-package}
 \title{PhosphoEnzymes: a reproducible reference of human kinases and phosphatases}
 \description{
-A function-first reference resource for the human phosphorylation machinery.
-The kinase master table (\code{\link[=get_kinases]{get_kinases()}}) is keyed on base Ensembl gene IDs
-and typed by substrate class. The phosphatase master, the derived unified
-summary, and the regulatory-subunit companion are forthcoming. See the
-package vignette for the evidence model, the \code{evidence_tier} definition, and
-usage.
+A function-first reference resource for the human phosphorylation machinery,
+keyed on base Ensembl gene IDs and typed by substrate class. It ships the
+kinase master (\code{\link[=get_kinases]{get_kinases()}}), the protein-phosphatase master
+(\code{\link[=get_phosphatases]{get_phosphatases()}}), and a thin class-agnostic summary spanning both
+(\code{\link[=get_phosphoenzymes]{get_phosphoenzymes()}}); a regulatory-subunit companion is forthcoming. See
+the package vignette for the evidence model, the \code{evidence_tier} definition,
+and usage.
 }
 \section{Evidence model (brief)}{
 
