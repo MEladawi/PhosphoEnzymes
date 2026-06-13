@@ -57,6 +57,12 @@ usethis::use_data(human_kinases, human_phosphatases, human_phosphoenzymes,
 readr::write_csv(human_phosphoenzymes,  file.path("inst", "extdata", "human_phosphoenzymes.csv"))
 readr::write_csv(membership_provenance, file.path("inst", "extdata", "membership_provenance.csv"))
 
+# Per-gene, term-set-independent evidence so the accessor's custom-term-set path can re-type a gene
+# without the unshipped GMT (merged EC codes, candidate-GO-accession membership, scalar evidence).
+substrate_evidence <- build_substrate_evidence_sidecar(human_kinases, human_phosphatases, "inst/extdata")
+readr::write_csv(substrate_evidence, file.path("inst", "extdata", "substrate_evidence.csv"))
+message(sprintf("substrate_evidence sidecar: %d rows", nrow(substrate_evidence)))
+
 # --- Build manifest ----------------------------------------------------------
 # One machine-readable provenance file: build date, package version, per-table
 # row count + content hash, and the recorded version of every input snapshot.

@@ -27,6 +27,7 @@ inst/extdata/*
 !inst/extdata/human_phosphoenzymes.csv
 !inst/extdata/membership_provenance.csv
 !inst/extdata/accepted_cross_class.csv
+!inst/extdata/substrate_evidence.csv
 # Cited EC/GO term-set tables (classification defaults, user-overridable)
 !inst/extdata/kinase_ec_terms.csv
 !inst/extdata/kinase_go_terms.csv

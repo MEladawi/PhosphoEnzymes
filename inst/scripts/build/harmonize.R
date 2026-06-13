@@ -96,6 +96,52 @@ build_unified_summary <- function(kinases_pkg, phosphatases_pkg) {
     tibble::as_tibble()
 }
 
+# Per-gene, term-set-INDEPENDENT evidence, shipped so the accessor term_sets= path can re-type a
+# gene against a user-supplied term set without the (build-only, unshipped) GMT. `go_terms` is the
+# gene's membership among the candidate GO accessions (the union of the four default term tables);
+# `ec_codes` is the merged HGNC(+UniProt) EC vector the gate used; the scalars are read from the
+# masters. A custom set re-curates the candidate accessions; an accession outside that candidate
+# universe requires a full rebuild.
+build_substrate_evidence_sidecar <- function(human_kinases, human_phosphatases, extdata_dir) {
+  hgnc <- build_hgnc_bridge(file.path(extdata_dir, "hgnc_complete_set.txt"))
+  ts   <- load_term_sets(extdata_dir)
+  gmt  <- read_gmt_accession_map(file.path(extdata_dir, "go_mf_genesets_with_iea_ensembl.gmt"))
+  candidate_go <- unique(c(ts$tables$kinase_go$term_id, ts$tables$phosphatase_go$term_id))
+  candidate_go <- candidate_go[candidate_go %in% names(gmt)]
+  go_terms_tbl <- map(candidate_go, \(acc) tibble(ensembl_gene_id = gmt[[acc]], acc = acc)) |>
+    list_rbind() |>
+    summarise(go_terms = paste(sort(unique(acc)), collapse = "|"), .by = ensembl_gene_id)
+
+  ec_kinase <- load_ec_kinome(hgnc$gene_metadata)$ec_table |>
+    transmute(ensembl_gene_id, ec_codes = map_chr(all_ec_codes, \(codes) paste(codes, collapse = "|")))
+  kw <- load_uniprot_keyword_phosphatome(
+    file.path(extdata_dir, "uniprot_phosphatase_KW-0904_human.tsv"), hgnc)
+  ec_phos <- load_ec_phosphatome(hgnc$gene_metadata, kw$ec_table)$ec_table |>
+    transmute(ensembl_gene_id, ec_codes = map_chr(all_ec_codes, \(codes) paste(codes, collapse = "|")))
+  chen <- load_chen_phosphatome(
+    file.path(extdata_dir, "chen_phosphatome_facts.tsv"), hgnc)$facts_table |>
+    transmute(ensembl_gene_id, chen_nonprotein = coalesce(chen_nonprotein_substrate, FALSE))
+
+  one_class <- function(master, cls, ec_tbl) {
+    master |>
+      transmute(ensembl_gene_id, regulator_class = cls,
+                in_structural_catalog, supplementary_support,
+                go_experimental_protein = go_experimental, catalytic_status) |>
+      left_join(ec_tbl,       by = join_by(ensembl_gene_id)) |>
+      left_join(go_terms_tbl, by = join_by(ensembl_gene_id)) |>
+      mutate(ec_codes = coalesce(ec_codes, ""), go_terms = coalesce(go_terms, ""))
+  }
+  kinase_rows <- one_class(human_kinases, "kinase", ec_kinase) |>
+    mutate(chen_nonprotein = FALSE)
+  phos_rows <- one_class(human_phosphatases, "phosphatase", ec_phos) |>
+    left_join(chen, by = join_by(ensembl_gene_id)) |>
+    mutate(chen_nonprotein = coalesce(chen_nonprotein, FALSE))
+
+  bind_rows(kinase_rows, phos_rows) |>
+    relocate(ensembl_gene_id, regulator_class, ec_codes, go_terms, chen_nonprotein,
+             in_structural_catalog, supplementary_support, go_experimental_protein, catalytic_status)
+}
+
 # Per-ENSG Axis-1 deriving-source map, making the single-lineage reality machine-checkable.
 build_membership_provenance <- function(kinases_pkg, phosphatases_pkg) {
   one <- function(df, cls) {
