@@ -1,18 +1,18 @@
-build_date: '2026-06-13'
+build_date: '2026-06-14'
 package_version: 0.99.0
 tables:
   human_kinases:
     n_rows: 756
     n_cols: 55
-    md5: 6572006d9703f3c4c35b2fa49e07403a
+    md5: 01505e1dbc612c44862c318b18402ca5
   human_phosphatases:
     n_rows: 298
     n_cols: 51
-    md5: 7488bf53ab920e464ade2b8da2fb01cd
+    md5: afb291b7d7165e5875984132cbf836d0
   human_phosphoenzymes:
     n_rows: 1054
     n_cols: 15
-    md5: 03f43852f984ff45b2017fdf46552d61
+    md5: a3a6e0ebd75889b365ddc4ea0e3a5c6f
 sources:
 - source: HGNC complete set (identifier bridge)
   file: hgnc_complete_set.txt
@@ -59,4 +59,4 @@ term_sets:
   kinase_ec: 8e9f6265e58671dbc0bedff802f1e9d0
   kinase_go: ae6eb32c550a142716e7cb843db21050
   phosphatase_ec: 1cde17b2354aed3e21fa66664da93c06
-  phosphatase_go: a5923be1af1427962842eaa9ce7231bb
+  phosphatase_go: 343b866472a296324e3e97f0b1051593

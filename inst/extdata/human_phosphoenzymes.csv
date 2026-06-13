@@ -810,11 +810,11 @@ ENSG00000132323,ILKAP,phosphatase,TRUE,FALSE,,FALSE,uncertain,2,Chen;HGNC_groups
 ENSG00000182866,LCK,phosphatase,TRUE,FALSE,,FALSE,active,0,GO,Provisional,FALSE,FALSE,protein,FALSE
 ENSG00000213920,MDP1,phosphatase,TRUE,TRUE,other,TRUE,active,2,HGNC_groups;EC;UniProtKW,Gold,TRUE,TRUE,dual,TRUE
 ENSG00000171100,MTM1,phosphatase,TRUE,TRUE,lipid,TRUE,active,2,Chen;GO;EC;UniProtKW,Gold,TRUE,TRUE,dual,TRUE
-ENSG00000163719,MTMR14,phosphatase,TRUE,TRUE,other,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
-ENSG00000100330,MTMR3,phosphatase,TRUE,TRUE,other,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
-ENSG00000108389,MTMR4,phosphatase,TRUE,TRUE,other,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
-ENSG00000139505,MTMR6,phosphatase,TRUE,TRUE,other,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
-ENSG00000003987,MTMR7,phosphatase,TRUE,TRUE,other,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
+ENSG00000163719,MTMR14,phosphatase,TRUE,TRUE,lipid,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
+ENSG00000100330,MTMR3,phosphatase,TRUE,TRUE,lipid,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
+ENSG00000108389,MTMR4,phosphatase,TRUE,TRUE,lipid,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
+ENSG00000139505,MTMR6,phosphatase,TRUE,TRUE,lipid,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
+ENSG00000003987,MTMR7,phosphatase,TRUE,TRUE,lipid,TRUE,active,1,Chen;GO,Silver,TRUE,TRUE,dual,TRUE
 ENSG00000109063,MYH3,phosphatase,TRUE,FALSE,,FALSE,active,0,GO,Provisional,FALSE,FALSE,protein,FALSE
 ENSG00000197616,MYH6,phosphatase,TRUE,FALSE,,FALSE,active,0,GO,Provisional,FALSE,FALSE,protein,FALSE
 ENSG00000133020,MYH8,phosphatase,TRUE,FALSE,,FALSE,active,0,GO,Provisional,FALSE,FALSE,protein,FALSE
@@ -936,6 +936,8 @@ ENSG00000111077,TNS2,phosphatase,TRUE,TRUE,other,TRUE,pseudo,2,Chen;HGNC_groups;
 ENSG00000274391,TPTE,phosphatase,TRUE,TRUE,lipid,TRUE,uncertain,2,Chen;HGNC_groups;GO;EC;UniProtKW,Gold,TRUE,FALSE,dual,FALSE
 ENSG00000154127,UBASH3B,phosphatase,TRUE,FALSE,,FALSE,active,2,Chen;GO;EC;UniProtKW,Gold,TRUE,TRUE,protein,TRUE
 ENSG00000164332,UBLCP1,phosphatase,TRUE,FALSE,,FALSE,uncertain,2,Chen;HGNC_groups;GO;EC;UniProtKW,Gold,TRUE,FALSE,protein,FALSE
+ENSG00000040933,INPP4A,phosphatase,FALSE,TRUE,lipid,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
+ENSG00000109452,INPP4B,phosphatase,FALSE,TRUE,lipid,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000204084,INPP5B,phosphatase,FALSE,TRUE,lipid,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000168918,INPP5D,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,EC,Bronze,TRUE,TRUE,nonprotein,FALSE
 ENSG00000148384,INPP5E,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
@@ -946,9 +948,12 @@ ENSG00000165458,INPPL1,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,
 ENSG00000134324,LPIN1,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000101577,LPIN2,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000132793,LPIN3,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
+ENSG00000063601,MTMR1,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,Chen;GO,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000087053,MTMR2,phosphatase,FALSE,TRUE,lipid,FALSE,active,2,Chen;GO;EC,Gold,TRUE,TRUE,nonprotein,FALSE
+ENSG00000102043,MTMR8,phosphatase,FALSE,TRUE,lipid,FALSE,uncertain,1,Chen;GO,Silver,TRUE,FALSE,nonprotein,FALSE
 ENSG00000122126,OCRL,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000115020,PIKFYVE,phosphatase,FALSE,TRUE,lipid,FALSE,active,0,GO,Provisional,FALSE,FALSE,nonprotein,FALSE
+ENSG00000155099,PIP4P2,phosphatase,FALSE,TRUE,lipid,FALSE,uncertain,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000067113,PLPP1,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000141934,PLPP2,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000162407,PLPP3,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
@@ -956,6 +961,7 @@ ENSG00000203805,PLPP4,phosphatase,FALSE,TRUE,lipid,FALSE,active,0,GO,Provisional
 ENSG00000147535,PLPP5,phosphatase,FALSE,TRUE,lipid,FALSE,active,0,GO,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000205808,PLPP6,phosphatase,FALSE,TRUE,lipid,FALSE,active,0,GO,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000117600,PLPPR4,phosphatase,FALSE,TRUE,lipid,FALSE,active,0,GO,Provisional,FALSE,FALSE,nonprotein,FALSE
+ENSG00000211456,SACM1L,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,Chen;GO,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000159082,SYNJ1,phosphatase,FALSE,TRUE,lipid,FALSE,active,2,Chen;GO;EC,Gold,TRUE,TRUE,nonprotein,FALSE
 ENSG00000078269,SYNJ2,phosphatase,FALSE,TRUE,lipid,FALSE,active,2,Chen;GO;EC,Gold,TRUE,TRUE,nonprotein,FALSE
 ENSG00000132958,TPTE2,phosphatase,FALSE,TRUE,lipid,FALSE,active,1,Chen;HGNC_groups;GO,Silver,TRUE,TRUE,nonprotein,FALSE
@@ -992,11 +998,8 @@ ENSG00000141349,G6PC3,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO;EC,Provisio
 ENSG00000133731,IMPA1,phosphatase,FALSE,TRUE,metabolite,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000141401,IMPA2,phosphatase,FALSE,TRUE,metabolite,FALSE,active,1,GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000151689,INPP1,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
-ENSG00000040933,INPP4A,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
-ENSG00000109452,INPP4B,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000068383,INPP5A,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000107789,MINPP1,phosphatase,FALSE,TRUE,other,FALSE,active,1,Chen;GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
-ENSG00000063601,MTMR1,phosphatase,FALSE,TRUE,other,FALSE,active,1,Chen;GO,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000170191,NANP,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000158571,PFKFB1,phosphatase,FALSE,TRUE,other,FALSE,active,1,Chen;GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000123836,PFKFB2,phosphatase,FALSE,TRUE,other,FALSE,active,1,Chen;GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
@@ -1010,7 +1013,6 @@ ENSG00000039650,PNKP,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO,Provisional,
 ENSG00000146733,PSPH,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000130021,PUDP,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO;EC,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000111880,RNGTT,phosphatase,FALSE,TRUE,other,FALSE,active,1,Chen;HGNC_groups;GO;EC;UniProtKW,Silver,TRUE,TRUE,nonprotein,FALSE
-ENSG00000211456,SACM1L,phosphatase,FALSE,TRUE,other,FALSE,active,1,Chen;GO,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000163082,SGPP2,phosphatase,FALSE,TRUE,other,FALSE,active,0,GO,Provisional,FALSE,FALSE,nonprotein,FALSE
 ENSG00000078237,TIGAR,phosphatase,FALSE,TRUE,other,FALSE,active,1,Chen;GO;EC,Silver,TRUE,TRUE,nonprotein,FALSE
 ENSG00000013523,ANGEL1,phosphatase,FALSE,FALSE,,FALSE,active,0,GO,Provisional,FALSE,FALSE,untyped,FALSE
@@ -1028,7 +1030,6 @@ ENSG00000069998,HDHD5,phosphatase,FALSE,FALSE,,FALSE,uncertain,1,Chen,Bronze,TRU
 ENSG00000166912,MTMR10,phosphatase,FALSE,FALSE,,FALSE,pseudo,1,Chen,Bronze,TRUE,FALSE,untyped,FALSE
 ENSG00000014914,MTMR11,phosphatase,FALSE,FALSE,,FALSE,pseudo,1,Chen,Bronze,TRUE,FALSE,untyped,FALSE
 ENSG00000150712,MTMR12,phosphatase,FALSE,FALSE,,FALSE,pseudo,1,Chen,Bronze,TRUE,FALSE,untyped,FALSE
-ENSG00000102043,MTMR8,phosphatase,FALSE,FALSE,,FALSE,uncertain,1,Chen;GO,Silver,TRUE,FALSE,untyped,FALSE
 ENSG00000104643,MTMR9,phosphatase,FALSE,FALSE,,FALSE,pseudo,1,Chen,Bronze,TRUE,FALSE,untyped,FALSE
 ENSG00000151014,NOCT,phosphatase,FALSE,FALSE,,FALSE,active,0,GO,Provisional,FALSE,FALSE,untyped,FALSE
 ENSG00000178425,NT5DC1,phosphatase,FALSE,FALSE,,FALSE,uncertain,0,GO,Provisional,FALSE,FALSE,untyped,FALSE
@@ -1036,7 +1037,6 @@ ENSG00000168268,NT5DC2,phosphatase,FALSE,FALSE,,FALSE,uncertain,0,GO,Provisional
 ENSG00000111696,NT5DC3,phosphatase,FALSE,FALSE,,FALSE,uncertain,0,GO,Provisional,FALSE,FALSE,untyped,FALSE
 ENSG00000170525,PFKFB3,phosphatase,FALSE,FALSE,,FALSE,pseudo,1,Chen;GO;EC,Bronze,TRUE,FALSE,untyped,FALSE
 ENSG00000165782,PIP4P1,phosphatase,FALSE,FALSE,,FALSE,uncertain,0,EC,Provisional,FALSE,FALSE,untyped,FALSE
-ENSG00000155099,PIP4P2,phosphatase,FALSE,FALSE,,FALSE,uncertain,0,GO;EC,Provisional,FALSE,FALSE,untyped,FALSE
 ENSG00000160539,PLPP7,phosphatase,FALSE,FALSE,,FALSE,uncertain,0,GO,Provisional,FALSE,FALSE,untyped,FALSE
 ENSG00000168781,PPIP5K1,phosphatase,FALSE,FALSE,,FALSE,pseudo,1,Chen,Bronze,TRUE,FALSE,untyped,FALSE
 ENSG00000145725,PPIP5K2,phosphatase,FALSE,FALSE,,FALSE,pseudo,1,Chen,Bronze,TRUE,FALSE,untyped,FALSE

@@ -5,14 +5,17 @@
 # over a family rather than asserting individual canonical status. These catch
 # whole-class regressions a single-gene test would miss.
 
-test_that("every myotubularin-family member is a lipid phosphatase", {
+test_that("every catalytically active myotubularin is a lipid phosphatase", {
   # The MTM/MTMR family are PTP-fold but act on phosphoinositides (lipids). Several
   # (MTM1, MTMR3/4/6/7/14) additionally dephosphorylate proteins (Chen 2017), so the
-  # invariant is dual-aware: every member must act on lipid (none is a PURE protein
-  # phosphatase), mirroring the dual-aware DGK kinase invariant.
+  # invariant is dual-aware: every active member must act on lipid (none is a PURE
+  # protein phosphatase), mirroring the dual-aware DGK kinase invariant. The family's
+  # pseudophosphatases (MTMR9/10/11/12, SBF1/SBF2) are catalytically dead and carry no
+  # substrate, so they are excluded -- typing them lipid would be an unsupported
+  # lineage default, which the substrate-blind gate deliberately does not make.
   p <- pe_phosphat()
-  fam <- p[p$symbol %in% PE_MTM_FAMILY, , drop = FALSE]
-  skip_if(nrow(fam) == 0L, "no MTM-family members present")
+  fam <- p[p$symbol %in% PE_MTM_FAMILY & !p$is_pseudophosphatase, , drop = FALSE]
+  skip_if(nrow(fam) == 0L, "no active MTM-family members present")
   expect_true(all(fam$acts_on_nonprotein & grepl("lipid", fam$nonprotein_substrate_type)))
 })
 
