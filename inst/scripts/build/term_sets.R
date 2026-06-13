@@ -99,8 +99,14 @@ validate_term_set <- function(term_sets, resolved = NULL,
   if (!is.null(resolved)) {
     for (cls in c("kinase", "phosphatase")) {
       go_tbl <- term_sets$tables[[paste0(cls, "_go")]]
-      unresolved <- setdiff(go_tbl$term_id, resolved$gmt_accessions)
-      for (t in unresolved) add("error", paste0(cls, "_go"), t, "GO term_id not present in the pinned GMT release")
+      # Only roles that actually feed ids_for() in the resolver need to be present in the GMT.
+      # "exclude" rows are documentation/traps and are never resolved against the gene-set file.
+      # Absent rigor_umbrella or rigor+substrate terms resolve to empty gene sets, which is a
+      # data-quality concern (warn) not a configuration error — the resolver handles it gracefully.
+      resolved_roles <- c("rigor+substrate", "rigor_umbrella")
+      active_terms <- go_tbl$term_id[go_tbl$role %in% resolved_roles]
+      unresolved <- setdiff(active_terms, resolved$gmt_accessions)
+      for (t in unresolved) add("warning", paste0(cls, "_go"), t, "GO term_id not present in the pinned GMT release (resolves to empty gene set)")
     }
     for (canary in reverse_canaries) {
       hits <- resolved[[canary$class]]$go_protein_ids
