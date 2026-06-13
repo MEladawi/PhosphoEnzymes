@@ -76,6 +76,12 @@ build_kinase_list <- function(refresh_data    = TRUE,
     # override share one code path.
     term_sets     <- load_term_sets(data_in_dir)
     resolved      <- resolve_term_sets(term_sets, path_for("go_mf_genesets"))
+    term_set_issues <- validate_term_set(term_sets, resolved)
+    if (any(term_set_issues$severity == "error"))
+      stop("Term-set validation failed:\n",
+           paste(sprintf("  [%s] %s (%s): %s", term_set_issues$severity, term_set_issues$table,
+                         term_set_issues$term_id, term_set_issues$message),
+                 collapse = "\n"))
 
     message("Loading sources ...")
     go_sets           <- load_go_functional_sets(path_for("go_mf_genesets"), resolved$kinase)
@@ -131,7 +137,8 @@ build_kinase_list <- function(refresh_data    = TRUE,
     invisible(list(kinases       = kinases_table,
                    unmapped      = unmapped_records,
                    manifest      = source_manifest,
-                   sanity_passed = sanity_passed))
+                   sanity_passed = sanity_passed,
+                   term_set_md5  = term_sets$md5))
   }
 
   if (quiet) suppressMessages(run_pipeline()) else run_pipeline()
@@ -170,6 +177,12 @@ build_phosphatase_list <- function(refresh_data    = TRUE,
     # accessor override share one code path.
     term_sets     <- load_term_sets(data_in_dir)
     resolved      <- resolve_term_sets(term_sets, path_for("go_mf_genesets"))
+    term_set_issues <- validate_term_set(term_sets, resolved)
+    if (any(term_set_issues$severity == "error"))
+      stop("Term-set validation failed:\n",
+           paste(sprintf("  [%s] %s (%s): %s", term_set_issues$severity, term_set_issues$table,
+                         term_set_issues$term_id, term_set_issues$message),
+                 collapse = "\n"))
 
     message("Loading phosphatase sources ...")
     go_phosphatase_sets <- load_go_phosphatase_sets(path_for("go_mf_genesets"), resolved$phosphatase)
@@ -200,7 +213,9 @@ build_phosphatase_list <- function(refresh_data    = TRUE,
                                                 resolved$phosphatase,
                                                 go_experimental_ids = go_experimental_ids)
 
-    invisible(list(phosphatases = phosphatases_table, unmapped = unmapped_records))
+    invisible(list(phosphatases  = phosphatases_table,
+                   unmapped      = unmapped_records,
+                   term_set_md5  = term_sets$md5))
   }
 
   if (quiet) suppressMessages(run_pipeline()) else run_pipeline()
