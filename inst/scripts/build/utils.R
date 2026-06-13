@@ -14,12 +14,15 @@
   }
 }
 
-# Split a pipe-delimited HGNC field into a trimmed character vector (drops blanks).
+# Split a pipe-delimited HGNC field into a trimmed character vector (drops blanks). Literal
+# double-quotes are stripped first: some HGNC multi-value fields arrive quote-wrapped
+# ("3.1.3.16|3.1.3.48|3.1.3.67"), which would otherwise leave a stray quote stuck to the first
+# and last tokens and break exact matching (e.g. an EC code that no longer equals "3.1.3.16").
 split_pipe_delimited <- function(field_value) {
   if (is.na(field_value) || field_value == "") {
     character(0)
   } else {
-    parts <- str_trim(str_split(field_value, fixed("|"))[[1]])
+    parts <- str_trim(str_split(str_remove_all(field_value, '"'), fixed("|"))[[1]])
     parts[parts != ""]
   }
 }
