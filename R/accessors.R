@@ -15,6 +15,36 @@ get_kinases <- function(mode = c("comprehensive", "strict")) {
   .pe_get_class("human_kinases", mode)
 }
 
+#' Access the human protein-phosphatase reference table
+#'
+#' @inheritParams get_kinases
+#' @return A [tibble][tibble::tibble] of human phosphatases, one row per gene.
+#' @examples
+#' p <- get_phosphatases()
+#' nrow(p)
+#' get_phosphatases(mode = "strict")
+#' @export
+get_phosphatases <- function(mode = c("comprehensive", "strict")) {
+  mode <- match.arg(mode)
+  .pe_get_class("human_phosphatases", mode)
+}
+
+#' Access the unified human phospho-enzyme summary
+#'
+#' A thin, class-agnostic table spanning both kinases and phosphatases (one row per gene,
+#' `regulator_class` distinguishing them), carrying only the shared substrate/evidence columns.
+#' Join to [get_kinases()] / [get_phosphatases()] by `ensembl_gene_id` to recover class-specific
+#' taxonomy. Ships all rows including Provisional; filter on `evidence_tier` / `curated_core`.
+#'
+#' @return A [tibble][tibble::tibble] spanning both enzyme classes.
+#' @examples
+#' pe <- get_phosphoenzymes()
+#' table(pe$regulator_class)
+#' @export
+get_phosphoenzymes <- function() {
+  .pe_load("human_phosphoenzymes")
+}
+
 # ---- internal helpers -------------------------------------------------------
 
 #' @keywords internal

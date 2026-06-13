@@ -5,6 +5,14 @@ tables:
     n_rows: 753
     n_cols: 46
     md5: 7872a4895d844ae4c9a8965a0dfa269d
+  human_phosphatases:
+    n_rows: 299
+    n_cols: 42
+    md5: e6e6d75df15ea8dd6c1ab82e36a97811
+  human_phosphoenzymes:
+    n_rows: 1052
+    n_cols: 13
+    md5: fd3081179dbc43c83bcd1de4cc0c7dbd
 sources:
 - source: HGNC complete set (identifier bridge)
   file: hgnc_complete_set.txt
@@ -38,4 +46,12 @@ sources:
 - source: Curated human pseudokinases (catalytic_status source)
   file: pseudokinases.csv
   version: curated pseudokinome list dated 2026-06-13
+  fetched: '2026-06-13'
+- source: Chen 2017 human phosphatome (reconstructed facts)
+  file: chen_phosphatome_facts.tsv
+  version: Chen/Dixon/Manning 2017, reconstructed facts dated 2026-06-13
+  fetched: '2026-06-13'
+- source: UniProtKB reviewed human, keyword KW-0904 (Protein phosphatase)
+  file: uniprot_phosphatase_KW-0904_human.tsv
+  version: UniProtKB reviewed KW-0904, fetched 2026-06-13
   fetched: '2026-06-13'

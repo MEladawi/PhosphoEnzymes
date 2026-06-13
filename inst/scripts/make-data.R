@@ -29,25 +29,43 @@ if (!isTRUE(result$sanity_passed))
 human_kinases <- harmonize_kinases_to_package_schema(result$kinases)
 message(sprintf("human_kinases: %d rows x %d cols", nrow(human_kinases), ncol(human_kinases)))
 
+# --- Phosphatases ------------------------------------------------------------
+phos <- build_phosphatase_list(refresh_data = FALSE, data_in_dir = "inst/extdata", quiet = FALSE)
+human_phosphatases <- harmonize_phosphatases_to_package_schema(phos$phosphatases)
+message(sprintf("human_phosphatases: %d rows x %d cols (protein subset %d)",
+                nrow(human_phosphatases), ncol(human_phosphatases), sum(human_phosphatases$acts_on_protein)))
+
+# --- Unified summary + provenance (derived from the two masters) -------------
+human_phosphoenzymes  <- build_unified_summary(human_kinases, human_phosphatases)
+membership_provenance <- build_membership_provenance(human_kinases, human_phosphatases)
+message(sprintf("human_phosphoenzymes: %d rows; membership_provenance: %d rows",
+                nrow(human_phosphoenzymes), nrow(membership_provenance)))
+
 if (!requireNamespace("usethis", quietly = TRUE))
   stop("Package 'usethis' is required to write data/*.rda.")
-usethis::use_data(human_kinases, compress = "xz", overwrite = TRUE)
+usethis::use_data(human_kinases, human_phosphatases, human_phosphoenzymes,
+                  compress = "xz", overwrite = TRUE)
+
+# Static CSVs for non-R (Python/CLI/HPC) consumers + the provenance sidecar, shipped in extdata.
+readr::write_csv(human_phosphoenzymes,  file.path("inst", "extdata", "human_phosphoenzymes.csv"))
+readr::write_csv(membership_provenance, file.path("inst", "extdata", "membership_provenance.csv"))
 
 # --- Build manifest ----------------------------------------------------------
 # One machine-readable provenance file: build date, package version, per-table
 # row count + content hash, and the recorded version of every input snapshot.
 package_version <- read.dcf("DESCRIPTION", fields = "Version")[1, 1]
-rda_path <- file.path("data", "human_kinases.rda")
 src <- result$manifest
+table_entry <- function(name, df) list(
+  n_rows = nrow(df), n_cols = ncol(df),
+  md5    = unname(tools::md5sum(file.path("data", paste0(name, ".rda")))))
 
 manifest <- list(
   build_date      = as.character(Sys.Date()),
   package_version = unname(package_version),
   tables = list(
-    human_kinases = list(
-      n_rows = nrow(human_kinases),
-      n_cols = ncol(human_kinases),
-      md5    = unname(tools::md5sum(rda_path)))),
+    human_kinases        = table_entry("human_kinases", human_kinases),
+    human_phosphatases   = table_entry("human_phosphatases", human_phosphatases),
+    human_phosphoenzymes = table_entry("human_phosphoenzymes", human_phosphoenzymes)),
   sources = lapply(seq_len(nrow(src)), function(i) list(
     source  = src$source[i],
     file    = src$file[i],

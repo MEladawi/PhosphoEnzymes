@@ -20,6 +20,9 @@ CHEN_FAMILY_LIPID      <- c("Myotubularin", "Sac", "PTEN", "INPP4", "Lipin",
 CHEN_FAMILY_NUCLEOTIDE <- c("5N", "NagD", "Deoxyribonucleotidases",
                             "cN-I nucleotidases", "cN-II nucleotidases")
 CHEN_FAMILY_CARB       <- c("Glc-6-Pase")
+# AP = the alkaline/acid phosphatase fold: broad-specificity small-molecule phosphatases (typed
+# "other"). Ensures AP-fold genes lacking a specific EC (e.g. ALPG) still carry non-protein typing.
+CHEN_FAMILY_OTHER      <- c("AP")
 
 # First-matching non-protein substrate class for one gene: a specific non-protein EC, then a
 # non-protein GO class, then a clearly-non-protein Chen family, then a generic "other" when some
@@ -37,6 +40,7 @@ classify_nonprotein_phosphatase_class <- function(ec_codes, chen_family, chen_no
   if (!is.na(chen_family) && chen_family %in% CHEN_FAMILY_LIPID)      return("lipid")
   if (!is.na(chen_family) && chen_family %in% CHEN_FAMILY_NUCLEOTIDE) return("nucleotide")
   if (!is.na(chen_family) && chen_family %in% CHEN_FAMILY_CARB)       return("carbohydrate")
+  if (!is.na(chen_family) && chen_family %in% CHEN_FAMILY_OTHER)      return("other")
   if (length(ec_codes) > 0 || isTRUE(chen_nonprotein)) return("other")
   NA_character_
 }

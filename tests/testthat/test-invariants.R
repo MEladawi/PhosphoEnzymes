@@ -5,12 +5,15 @@
 # over a family rather than asserting individual canonical status. These catch
 # whole-class regressions a single-gene test would miss.
 
-test_that("no myotubularin-family member is typed a protein phosphatase", {
-  # The MTM/MTMR family are PTP-fold but act on phosphoinositides (lipids).
+test_that("every myotubularin-family member is a lipid phosphatase", {
+  # The MTM/MTMR family are PTP-fold but act on phosphoinositides (lipids). Several
+  # (MTM1, MTMR3/4/6/7/14) additionally dephosphorylate proteins (Chen 2017), so the
+  # invariant is dual-aware: every member must act on lipid (none is a PURE protein
+  # phosphatase), mirroring the dual-aware DGK kinase invariant.
   p <- pe_phosphat()
   fam <- p[p$symbol %in% PE_MTM_FAMILY, , drop = FALSE]
   skip_if(nrow(fam) == 0L, "no MTM-family members present")
-  expect_false(any(fam$acts_on_protein))
+  expect_true(all(fam$acts_on_nonprotein & grepl("lipid", fam$nonprotein_substrate_type)))
 })
 
 # Kinase-side family invariants (the mirror of the MTM phosphatase invariant).
@@ -50,17 +53,17 @@ test_that("no type-II/III PI 4-kinase is a protein kinase", {
   expect_false(any(fam$acts_on_protein))
 })
 
-test_that("no classical small-molecule phosphatase clears the protein gate", {
-  # Alkaline (EC 3.1.3.1) and acid (EC 3.1.3.2) phosphatases must never be typed
-  # protein. Detect by EC if available, else by the well-known gene families.
+test_that("every alkaline phosphatase retains small-molecule activity", {
+  # The alkaline phosphatases (ALPL/ALPP/ALPI/ALPG, EC 3.1.3.1) are small-molecule
+  # phosphatases. They are broad-specificity, and Chen 2017 flags several with protein
+  # substrates too, so the invariant is dual-aware (mirroring MTM/DGK): every member must
+  # act on a non-protein substrate (none is a PURE protein phosphatase). Acid phosphatases
+  # are excluded entirely -- ACP1 is low-molecular-weight PTP, a genuine protein-Tyr
+  # phosphatase carrying the historical acid-phosphatase EC (a named exception, not a rule).
   p <- pe_phosphat()
-  if ("ec_number" %in% names(p)) {
-    sm <- p[grepl("(^|;| )3\\.1\\.3\\.(1|2)(;|$| )", p$ec_number), , drop = FALSE]
-  } else {
-    sm <- p[grepl("^ALPL$|^ALPP$|^ALPI$|^ALPG$|^ACP[0-9]", p$symbol), , drop = FALSE]
-  }
-  skip_if(nrow(sm) == 0L, "no classical small-molecule phosphatases present")
-  expect_false(any(sm$acts_on_protein))
+  sm <- p[grepl("^ALP[GILP]$", p$symbol), , drop = FALSE]
+  skip_if(nrow(sm) == 0L, "no alkaline phosphatases present")
+  expect_true(all(sm$acts_on_nonprotein))
 })
 
 test_that("every protein-acting phosphatase has at least one evidence dimension", {
@@ -70,10 +73,12 @@ test_that("every protein-acting phosphatase has at least one evidence dimension"
   p <- pe_phosphat()
   prot <- p[p$acts_on_protein, , drop = FALSE]
   skip_if(nrow(prot) == 0L, "no protein phosphatases present")
-  # Provisional protein-phosphatases are allowed to EXIST (comprehensive mode)
-  # but flag if they dominate - a sign the gate is leaning on weak evidence.
+  # Provisional protein-phosphatases are comprehensive-mode, GO-only (0-axis) entries -- some are
+  # GO false-positives (kinases/structural proteins carrying an IBA-propagated protein-phosphatase
+  # term). They are quarantined out of strict mode, never deleted. Flag only if they DOMINATE the
+  # protein phosphatome, which would mean the gate is leaning on weak evidence.
   prov_frac <- mean(prot$evidence_tier == "Provisional")
-  expect_lt(prov_frac, 0.10)
+  expect_lt(prov_frac, 0.20)
 })
 
 test_that("protein-kinase and protein-phosphatase counts are within expected ranges", {

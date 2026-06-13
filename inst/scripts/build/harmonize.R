@@ -45,3 +45,55 @@ harmonize_kinases_to_package_schema <- function(kinases_table) {
       is_idg_dark_kinase) |>
     tibble::as_tibble()
 }
+
+# Map the phosphatase engine table to the shipped `human_phosphatases` schema -- parallel to the
+# kinase master (same substrate/evidence columns) but with phosphatase taxonomy (fold/family/
+# subfamily) and per-source flags. The engine already emits the package columns; this only renames
+# the symbol column and promotes it to second position.
+harmonize_phosphatases_to_package_schema <- function(phosphatases_table) {
+  phosphatases_table |>
+    rename(symbol = hgnc_symbol) |>
+    relocate(symbol, .after = ensembl_gene_id) |>
+    tibble::as_tibble()
+}
+
+# Semicolon-joined names of the per-source flags that are TRUE for each row.
+.evidence_sources_string <- function(df, flag_columns, labels) {
+  pmap_chr(df[flag_columns], function(...) paste(labels[c(...)], collapse = ";"))
+}
+
+KINASE_SOURCE_FLAGS  <- c("is_pkinfam", "is_manning", "is_kinhub", "is_go_kinase_activity",
+                          "is_ec_kinase", "has_uniprot_kw", "is_idg_dark_kinase")
+KINASE_SOURCE_LABELS <- c("pkinfam", "Manning", "KinHub", "GO", "EC", "UniProtKW", "IDG")
+PHOSPHATASE_SOURCE_FLAGS  <- c("is_chen", "is_hgnc_phosphatase_group", "is_go_phosphatase_activity",
+                               "is_phosphatase_ec", "is_uniprot_kw_phosphatase")
+PHOSPHATASE_SOURCE_LABELS <- c("Chen", "HGNC_groups", "GO", "EC", "UniProtKW")
+
+# The thin, class-agnostic unified summary derived from the two masters (one source of truth per
+# class). Shared columns only -- no family/group column (the taxonomy vocabularies are disjoint;
+# join to a master to recover them). Ships all rows incl. Provisional, each carrying evidence_tier.
+build_unified_summary <- function(kinases_pkg, phosphatases_pkg) {
+  thin <- function(df, cls, flags, labels) {
+    df |> transmute(
+      ensembl_gene_id, symbol, regulator_class = cls,
+      acts_on_protein, acts_on_nonprotein, nonprotein_substrate_type, dual_protein_nonprotein,
+      catalytic_status, n_evidence_dimensions,
+      evidence_sources = .evidence_sources_string(df, flags, labels),
+      evidence_tier, curated_core, is_catalytic_background)
+  }
+  bind_rows(thin(kinases_pkg,      "kinase",      KINASE_SOURCE_FLAGS,      KINASE_SOURCE_LABELS),
+            thin(phosphatases_pkg, "phosphatase", PHOSPHATASE_SOURCE_FLAGS, PHOSPHATASE_SOURCE_LABELS)) |>
+    tibble::as_tibble()
+}
+
+# Per-ENSG Axis-1 deriving-source map, making the single-lineage reality machine-checkable.
+build_membership_provenance <- function(kinases_pkg, phosphatases_pkg) {
+  one <- function(df, cls) {
+    df |> filter(!is.na(membership_basis)) |>
+      transmute(ensembl_gene_id, regulator_class = cls,
+                deriving_source = str_remove(membership_basis, "^[^:]+:"),
+                membership_basis)
+  }
+  bind_rows(one(kinases_pkg, "kinase"), one(phosphatases_pkg, "phosphatase")) |>
+    tibble::as_tibble()
+}

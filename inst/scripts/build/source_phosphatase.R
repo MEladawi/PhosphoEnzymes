@@ -46,13 +46,13 @@ load_chen_phosphatome <- function(chen_facts_path, hgnc_bridge) {
 # basis of the (deferred) regulatory companion and are returned separately so they never enter the
 # catalytic master; the non-protein groups corroborate substrate typing. Operates directly on the
 # HGNC metadata (already Ensembl-keyed; no resolve step).
-HGNC_PROTEIN_PHOSPHATASE_GROUP <- regex(paste(
+HGNC_PROTEIN_PHOSPHATASE_GROUP <- stringr::regex(paste(
   "protein tyrosine phosphatase", "dual specificity phosphatase", "MAP kinase phosphatase",
   "protein phosphatase catalytic", "Mg2\\+/Mn2\\+ dependent", "CDC14", "CDC25",
   "CTD family phosphatase", "PTEN protein phosphatase", "EYA ", "Slingshot",
   "Serine/threonine phosphatase", "Cys-based", "HAD Asp-based protein", "LAR protein",
   "Protein tyrosine phosphatase 4A", sep = "|"), ignore_case = TRUE)
-HGNC_REGULATORY_GROUP <- regex(paste(
+HGNC_REGULATORY_GROUP <- stringr::regex(paste(
   "regulatory subunit", "modulatory subunit", "scaffold subunit", "targeting", "actin regulator",
   sep = "|"), ignore_case = TRUE)
 

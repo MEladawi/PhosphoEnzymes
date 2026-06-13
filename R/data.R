@@ -82,3 +82,89 @@
 #' @source Manning et al. Science 2002;298:1912-1934; KinHub/KinMap (Eid 2017);
 #'   kinase.com; UniProt pkinfam; GO; IUBMB EC. See the package vignette.
 "human_kinases"
+
+#' Human protein-phosphatase reference table
+#'
+#' One row per human phosphatase gene, keyed on base Ensembl gene ID and typed by
+#' substrate class. Parallel in schema to [human_kinases]. Built by
+#' `inst/scripts/make-data.R` from pinned source snapshots; see the vignette.
+#'
+#' @format A data frame with one row per gene and the following columns:
+#' \describe{
+#'   \item{ensembl_gene_id}{Base (unversioned) Ensembl gene ID. Primary key.}
+#'   \item{symbol}{HGNC symbol.}
+#'   \item{acts_on_protein}{Logical. TRUE if the enzyme dephosphorylates protein substrates.}
+#'   \item{acts_on_nonprotein}{Logical. Derived `nzchar(nonprotein_substrate_type)`; co-equal
+#'     with `acts_on_protein` (a dual enzyme such as PTEN is non-protein, others may be both).}
+#'   \item{nonprotein_substrate_type}{Pipe-delimited non-protein classes ("lipid", "nucleotide",
+#'     "carbohydrate", "other"); empty for protein-only.}
+#'   \item{substrate_subtype}{Finer-grained substrate label (e.g. "Lipid phosphatase").}
+#'   \item{dual_protein_nonprotein}{Logical. Acts on both protein and non-protein substrates.}
+#'   \item{catalytic_status}{"active" / "pseudo" / "uncertain", from Chen 2017.}
+#'   \item{is_catalytic_background}{Logical. `catalytic_status == "active"` AND `curated_core`.}
+#'   \item{is_pseudophosphatase}{Logical. Predicted catalytically dead (Chen 2017).}
+#'   \item{n_evidence_dimensions}{Integer 0-2. Distinct evidence classes (structural catalog;
+#'     protein-specific EC). Substrate-agnostic; distinct in kind, not statistically independent.}
+#'   \item{evidence_tier}{"Gold" / "Silver" / "Bronze" / "Provisional"; heuristic over the two
+#'     evidence classes plus supplementary support. Not a confidence score.}
+#'   \item{curated_core}{Logical. >= 1 evidence dimension.}
+#'   \item{in_structural_catalog}{Logical. Axis 1: Chen 2017 phosphatome or an HGNC
+#'     protein-phosphatase gene group.}
+#'   \item{is_protein_phosphatase_ec}{Logical. Axis 2: EC 3.1.3.16 (Ser/Thr) or 3.1.3.48 (Tyr).}
+#'   \item{go_experimental}{Logical. Non-electronic GO phosphatase-activity support.}
+#'   \item{has_uniprot_kw}{Logical. Reviewed Swiss-Prot keyword KW-0904 present.}
+#'   \item{supplementary_support}{Logical. `go_experimental` OR `has_uniprot_kw`.}
+#'   \item{membership_basis}{Deriving source of the Axis-1 call ("reconstructed:Chen2017" /
+#'     "reconstructed:HGNC_groups"); NA when in no structural catalog.}
+#'   \item{classification_reason}{Human-readable rationale for the substrate call.}
+#'   \item{phosphatase_fold}{Chen structural fold (CC1, HAD, PPM, ...); may be NA.}
+#'   \item{phosphatase_family}{Chen family; may be NA.}
+#'   \item{phosphatase_subfamily}{Chen subfamily; may be NA.}
+#'   \item{n_membership_sources}{Integer. Count of TRUE per-source flags.}
+#'   \item{is_pseudogene}{Logical. HGNC locus type matches "pseudogene".}
+#'   \item{hgnc_id}{HGNC identifier.}
+#'   \item{gene_name}{HGNC approved gene name.}
+#'   \item{entrez_id}{NCBI Entrez gene ID.}
+#'   \item{uniprot_ids}{UniProt accession(s).}
+#'   \item{prev_symbol}{HGNC previous symbol(s).}
+#'   \item{alias_symbol}{HGNC alias symbol(s).}
+#'   \item{enzyme_id_EC}{EC number(s) from HGNC `enzyme_id`.}
+#'   \item{hgnc_gene_group}{HGNC gene-group membership string.}
+#'   \item{locus_type}{HGNC locus type.}
+#'   \item{chromosomal_location}{Cytogenetic location.}
+#'   \item{mane_select_transcript}{MANE Select transcript.}
+#'   \item{iuphar_id}{IUPHAR/Guide to Pharmacology identifier.}
+#'   \item{is_chen}{Logical. In the Chen 2017 protein phosphatome.}
+#'   \item{is_hgnc_phosphatase_group}{Logical. In an HGNC protein-phosphatase gene group.}
+#'   \item{is_go_phosphatase_activity}{Logical. In the GO phosphatase-activity umbrella.}
+#'   \item{is_phosphatase_ec}{Logical. Carries an EC 3.1.3 number (any 4-digit).}
+#'   \item{is_uniprot_kw_phosphatase}{Logical. Reviewed UniProt KW-0904.}
+#' }
+#' @source Chen, Dixon, Manning, Sci Signal 2017 (phosphatome.net); HGNC gene groups;
+#'   UniProt KW-0904; GO; IUBMB EC. See the package vignette.
+"human_phosphatases"
+
+#' Unified human phospho-enzyme summary
+#'
+#' Thin, class-agnostic table spanning kinases and phosphatases, derived from [human_kinases]
+#' and [human_phosphatases]. Shared substrate/evidence columns only; join to a master by
+#' `ensembl_gene_id` to recover class-specific taxonomy.
+#'
+#' @format A data frame with one row per gene and the following columns:
+#' \describe{
+#'   \item{ensembl_gene_id}{Base Ensembl gene ID. Primary key.}
+#'   \item{symbol}{HGNC symbol.}
+#'   \item{regulator_class}{"kinase" or "phosphatase".}
+#'   \item{acts_on_protein}{Logical. Acts on protein substrates.}
+#'   \item{acts_on_nonprotein}{Logical. Acts on a non-protein substrate.}
+#'   \item{nonprotein_substrate_type}{Pipe-delimited non-protein classes; empty = protein-only.}
+#'   \item{dual_protein_nonprotein}{Logical. Acts on both.}
+#'   \item{catalytic_status}{"active" / "pseudo" / "uncertain".}
+#'   \item{n_evidence_dimensions}{Integer 0-2. The rigor metric.}
+#'   \item{evidence_sources}{Semicolon-joined names of the supporting sources.}
+#'   \item{evidence_tier}{"Gold" / "Silver" / "Bronze" / "Provisional".}
+#'   \item{curated_core}{Logical. >= 1 evidence dimension.}
+#'   \item{is_catalytic_background}{Logical. Active AND curated_core.}
+#' }
+#' @source Derived from [human_kinases] and [human_phosphatases].
+"human_phosphoenzymes"

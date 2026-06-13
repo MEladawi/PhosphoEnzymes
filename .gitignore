@@ -23,6 +23,10 @@ inst/extdata/*
 !inst/extdata/uniprot_phosphatase_KW-0904_human.tsv
 !inst/extdata/chen_phosphatome_facts.tsv
 !inst/extdata/pseudokinases.csv
+# Derived, shipped artifacts for non-R consumers (md5-gated against the .rda copies)
+!inst/extdata/human_phosphoenzymes.csv
+!inst/extdata/membership_provenance.csv
+!inst/extdata/accepted_cross_class.csv
 
 # Ignore dotfiles (.DS_Store, .Rhistory, .RData, .Rproj.user/, etc.), but keep the
 # repo's own meta files that must stay under version control.
