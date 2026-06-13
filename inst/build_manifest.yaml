@@ -1,4 +1,4 @@
-build_date: '2026-06-12'
+build_date: '2026-06-13'
 package_version: 0.99.0
 tables:
   human_kinases:
@@ -23,10 +23,10 @@ sources:
   file: kinase.com_manning_list.xls
   version: Manning et al. 2002 (static), fetched 2026-06-07
   fetched: '2026-06-07'
-- source: KinHub human kinase list (pinned snapshot)
-  file: kinhub_kinases.html
-  version: kinhub.org (Eid et al. 2017), pinned snapshot dated 2026-06-07
-  fetched: '2026-06-07'
+- source: KinHub human kinase list (reconstructed facts)
+  file: kinhub_facts.tsv
+  version: kinhub.org (Eid et al. 2017), reconstructed membership facts dated 2026-06-13
+  fetched: '2026-06-13'
 - source: UniProtKB reviewed human, keyword KW-0418 (Kinase)
   file: uniprot_kinase_KW-0418_human.tsv
   version: UniProtKB reviewed, fetched 2026-06-07

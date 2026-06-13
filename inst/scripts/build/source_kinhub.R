@@ -1,14 +1,15 @@
 # helper_code/source_kinhub.R
-# KinHub (kinhub.org) human kinase list, parsed from the live HTML table. Carries the
-# Manning group/family/subfamily classification with current HGNC names. Mapped by
-# UniProt accession, then HGNC symbol.
+# KinHub (kinhub.org) human kinase list. The bundled input is a reconstructed
+# facts table -- HGNC-normalised gene memberships and the Manning
+# group/family/subfamily classification, one row per gene -- rather than a copy
+# of the source web page. Mapped to a base Ensembl gene ID by UniProt accession,
+# then HGNC symbol.
 
-load_kinhub_kinome <- function(kinhub_html_path, hgnc_bridge) {
-  kinhub_table <- read_html(kinhub_html_path) |> html_element("table") |> html_table()
-  names(kinhub_table) <- str_squish(names(kinhub_table))           # normalise header whitespace/nbsp
+load_kinhub_kinome <- function(kinhub_facts_path, hgnc_bridge) {
+  kinhub_table <- read_tsv(kinhub_facts_path, na = "", show_col_types = FALSE)
   resolved <- kinhub_table |>
-    transmute(symbol = `HGNC Name`, uniprot_accession = UniprotID, manning_name = `Manning Name`,
-              group = Group, family = Family, subfamily = SubFamily) |>
+    transmute(symbol = hgnc_name, uniprot_accession = uniprot_id, manning_name = manning_name,
+              group = group, family = family, subfamily = subfamily) |>
     mutate(across(everything(), ~ na_if(str_trim(.x), "")),
            ensembl_gene_id = pmap_chr(list(uniprot_accession, symbol),
                                       ~ hgnc_bridge$resolve_to_ensembl(uniprot_accessions = ..1, source_symbols = ..2)))

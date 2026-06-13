@@ -104,16 +104,17 @@ SOURCE_REGISTRY <- list(
     auto_updatable = TRUE,
     read_version   = function(file_path) paste("Manning et al. 2002 (static), fetched", file_modification_date(file_path))),
 
-  # KinHub republishes the Manning kinome (Eid et al. 2017) and has not changed since; it is
-  # pinned as a dated snapshot (auto_updatable = FALSE) rather than scraped live each run, so
-  # the frozen content cannot drift and offline reruns use exactly this file. The snapshot is
+  # KinHub republishes the Manning kinome (Eid et al. 2017) and has not changed since. The
+  # bundled input is a reconstructed facts table -- HGNC-normalised gene memberships and the
+  # Manning group/family/subfamily labels, one row per gene -- not a copy of the source web
+  # page; it is pinned (auto_updatable = FALSE) so offline reruns use exactly this file. It is
   # committed to the repo (see .gitignore exception) so it is available to fresh clones.
   kinhub = list(
-    description    = "KinHub human kinase list (pinned snapshot)",
-    local_filename = "kinhub_kinases.html",
+    description    = "KinHub human kinase list (reconstructed facts)",
+    local_filename = "kinhub_facts.tsv",
     download_url   = "http://www.kinhub.org/kinases.html",
     auto_updatable = FALSE,
-    read_version   = function(file_path) paste("kinhub.org (Eid et al. 2017), pinned snapshot dated", file_modification_date(file_path))),
+    read_version   = function(file_path) paste("kinhub.org (Eid et al. 2017), reconstructed membership facts dated", file_modification_date(file_path))),
 
   uniprot_keyword_kinase = list(
     description    = "UniProtKB reviewed human, keyword KW-0418 (Kinase)",

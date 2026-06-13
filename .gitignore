@@ -4,11 +4,22 @@ data_out/
 # BiocCheck output directory
 *.BiocCheck/
 
-# Source snapshots in inst/extdata -- the committed pinned set is finalized later;
-# for now keep only the docs and the frozen KinHub snapshot under version control.
+# Pinned source snapshots in inst/extdata: track only the inputs we are licensed to
+# redistribute (HGNC CC0; UniProt and GO CC BY 4.0; kinase.com and IDG MIT via
+# DarkKinaseTools) plus the reconstructed KinHub facts and the manifests. The raw KinHub
+# web page (kinhub_kinases.html) is deliberately NOT tracked -- it is kept locally only to
+# regenerate kinhub_facts.tsv.
 inst/extdata/*
 !inst/extdata/SOURCES.md
-!inst/extdata/kinhub_kinases.html
+!inst/extdata/SOURCES.tsv
+!inst/extdata/hgnc_complete_set.txt
+!inst/extdata/pkinfam.txt
+!inst/extdata/uniprot_kinase_KW-0418_human.tsv
+!inst/extdata/go_mf_genesets_with_iea_ensembl.gmt
+!inst/extdata/go_mf_genesets_no_iea_ensembl.gmt
+!inst/extdata/kinase.com_manning_list.xls
+!inst/extdata/IDG_dark_kinase_list.csv
+!inst/extdata/kinhub_facts.tsv
 
 # Ignore dotfiles (.DS_Store, .Rhistory, .RData, .Rproj.user/, etc.), but keep the
 # repo's own meta files that must stay under version control.
