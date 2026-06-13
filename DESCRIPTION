@@ -18,9 +18,8 @@ Description: A reproducible reference resource for the human phosphorylation
     regeneration pipeline lives in inst/scripts. See the vignette for usage.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Depends:
-    R (>= 4.4.0)
+    R (>= 4.5.0)
 Imports:
     tibble
 Suggests:

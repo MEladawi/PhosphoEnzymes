@@ -7,10 +7,11 @@
 \title{PhosphoEnzymes: a reproducible reference of human kinases and phosphatases}
 \description{
 A function-first reference resource for the human phosphorylation machinery.
-Two class-specific master tables (kinases, phosphatases) are keyed on base
-Ensembl gene IDs and typed by substrate class; a derived unified summary
-(\code{\link[=get_phosphoenzymes]{get_phosphoenzymes()}}) provides a thin cross-class view. See the package
-vignette for the evidence model, the \code{evidence_tier} definition, and usage.
+The kinase master table (\code{\link[=get_kinases]{get_kinases()}}) is keyed on base Ensembl gene IDs
+and typed by substrate class. The phosphatase master, the derived unified
+summary, and the regulatory-subunit companion are forthcoming. See the
+package vignette for the evidence model, the \code{evidence_tier} definition, and
+usage.
 }
 \section{Evidence model (brief)}{
 

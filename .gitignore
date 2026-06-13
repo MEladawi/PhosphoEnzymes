@@ -1,6 +1,9 @@
 # Generated outputs (legacy script pipeline)
 data_out/
 
+# BiocCheck output directory
+*.BiocCheck/
+
 # Source snapshots in inst/extdata -- the committed pinned set is finalized later;
 # for now keep only the docs and the frozen KinHub snapshot under version control.
 inst/extdata/*

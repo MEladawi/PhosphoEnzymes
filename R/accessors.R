@@ -15,53 +15,6 @@ get_kinases <- function(mode = c("comprehensive", "strict")) {
   .pe_get_class("human_kinases", mode)
 }
 
-#' Access the human phosphatase reference table
-#'
-#' @inheritParams get_kinases
-#' @return A [tibble][tibble::tibble] of human phosphatases, one row per
-#'   catalytic gene. Regulatory/scaffold subunits are not included here; see
-#'   [get_phosphatase_regulators()].
-#' @examples
-#' \dontrun{
-#' p <- get_phosphatases()
-#' table(p$substrate_type)
-#' }
-#' @export
-get_phosphatases <- function(mode = c("comprehensive", "strict")) {
-  mode <- match.arg(mode)
-  .pe_get_class("human_phosphatases", mode)
-}
-
-#' Access the unified phospho-enzyme summary
-#'
-#' The thin, derived cross-class summary (kinases + phosphatases) with the
-#' shared, class-agnostic columns only. "All protein-acting phospho-enzymes"
-#' is `subset(get_phosphoenzymes(), acts_on_protein)`.
-#'
-#' @return A [tibble][tibble::tibble] combining both classes.
-#' @examples
-#' \dontrun{
-#' pe <- get_phosphoenzymes()
-#' with(pe, table(regulator_class, acts_on_protein))
-#' }
-#' @export
-get_phosphoenzymes <- function() {
-  .pe_load("human_phosphoenzymes")
-}
-
-#' Access the phosphatase regulatory/scaffold subunit companion table
-#'
-#' Non-catalytic subunits (e.g. `PPP1R*`, `PPP2R*`) mapped to their catalytic
-#' complexes. These are deliberately excluded from [get_phosphatases()] to keep
-#' the phosphatase reference catalytic-only (the analog of excluding cyclins
-#' from a kinome).
-#'
-#' @return A [tibble][tibble::tibble] of regulatory/scaffold subunits.
-#' @export
-get_phosphatase_regulators <- function() {
-  .pe_load("phosphatase_regulatory_subunits")
-}
-
 # ---- internal helpers -------------------------------------------------------
 
 #' @keywords internal
@@ -80,9 +33,6 @@ get_phosphatase_regulators <- function() {
 #' @noRd
 .pe_load <- function(dataset) {
   e <- new.env(parent = emptyenv())
-  # An absent dataset makes utils::data() warn and create nothing; suppress that
-  # warning so the get() below raises the single, clean "not built yet" error that
-  # the test helpers turn into a skip().
-  suppressWarnings(utils::data(list = dataset, package = "PhosphoEnzymes", envir = e))
+  utils::data(list = dataset, package = "PhosphoEnzymes", envir = e)
   tibble::as_tibble(get(dataset, envir = e))
 }

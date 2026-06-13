@@ -14,9 +14,13 @@ pe_try <- function(fn, ...) {
   out
 }
 
+# The phosphatase accessors are not exported until their data is built, so the
+# `::` access is wrapped in a closure: that way an unresolved-export error is
+# raised inside pe_try() (and turned into a skip) rather than during argument
+# evaluation.
 pe_kinases  <- function(...) pe_try(PhosphoEnzymes::get_kinases, ...)
-pe_phosphat <- function(...) pe_try(PhosphoEnzymes::get_phosphatases, ...)
-pe_unified  <- function()    pe_try(PhosphoEnzymes::get_phosphoenzymes)
+pe_phosphat <- function(...) pe_try(function(...) PhosphoEnzymes::get_phosphatases(...), ...)
+pe_unified  <- function()    pe_try(function() PhosphoEnzymes::get_phosphoenzymes())
 
 # Look up a single gene by symbol; returns a one-row data frame or NULL.
 pe_row <- function(df, sym) {

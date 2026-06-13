@@ -25,18 +25,20 @@ their accessors are present and return data once those tables are built.
 
 # Accessing the tables
 
-```{r}
+```{r load-kinases}
 k <- get_kinases()
 nrow(k)
 table(k$substrate_type)
 ```
 
-```{r, eval = FALSE}
+```{r strict-example, eval = FALSE}
 get_kinases(mode = "strict")   # canonical set: >= 1 independent evidence axis
-get_phosphatases()             # forthcoming
-get_phosphoenzymes()           # forthcoming
-get_phosphatase_regulators()   # forthcoming
 ```
+
+The phosphatase master, the unified phospho-enzyme summary, and the
+regulatory-subunit companion (with their `get_phosphatases()`,
+`get_phosphoenzymes()`, and `get_phosphatase_regulators()` accessors) are
+forthcoming.
 
 # The evidence model
 
@@ -65,12 +67,12 @@ Because Gold requires the biochemical axis, it is common among well-characterize
 kinases but will be rarer among phosphatases, whose protein-specific EC coverage
 is far thinner -- a real feature of the underlying data, not a scoring artifact.
 
-```{r}
+```{r tier-table}
 table(k$evidence_tier)
 ```
 
 # Session info
 
-```{r}
+```{r session-info}
 sessionInfo()
 ```

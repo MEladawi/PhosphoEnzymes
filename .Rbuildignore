@@ -7,4 +7,5 @@
 ^inst/scripts/.*\.log$
 ^data_out$
 ^doc$
+^.*\.BiocCheck$
 ^\.[^/]+$
