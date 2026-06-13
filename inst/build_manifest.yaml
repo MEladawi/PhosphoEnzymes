@@ -2,17 +2,17 @@ build_date: '2026-06-13'
 package_version: 0.99.0
 tables:
   human_kinases:
-    n_rows: 753
-    n_cols: 46
-    md5: 7872a4895d844ae4c9a8965a0dfa269d
+    n_rows: 756
+    n_cols: 55
+    md5: 9d41764ffdadee3fb901a3535d7afd58
   human_phosphatases:
     n_rows: 299
-    n_cols: 42
-    md5: e6e6d75df15ea8dd6c1ab82e36a97811
+    n_cols: 51
+    md5: 74ca00098e18104f8e5b3b4131a5623b
   human_phosphoenzymes:
-    n_rows: 1052
-    n_cols: 13
-    md5: fd3081179dbc43c83bcd1de4cc0c7dbd
+    n_rows: 1055
+    n_cols: 15
+    md5: 866db259b4ef8c75fa7cf5df467538ab
 sources:
 - source: HGNC complete set (identifier bridge)
   file: hgnc_complete_set.txt
@@ -55,3 +55,8 @@ sources:
   file: uniprot_phosphatase_KW-0904_human.tsv
   version: UniProtKB reviewed KW-0904, fetched 2026-06-13
   fetched: '2026-06-13'
+term_sets:
+  kinase_ec: 8e9f6265e58671dbc0bedff802f1e9d0
+  kinase_go: ae6eb32c550a142716e7cb843db21050
+  phosphatase_ec: 1cde17b2354aed3e21fa66664da93c06
+  phosphatase_go: a5923be1af1427962842eaa9ce7231bb

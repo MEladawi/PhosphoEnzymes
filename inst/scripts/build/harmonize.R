@@ -19,6 +19,15 @@ harmonize_kinases_to_package_schema <- function(kinases_table) {
       nonprotein_substrate_type,
       substrate_subtype = kinase_type,
       dual_protein_nonprotein,
+      substrate_call,
+      substrate_evidence,
+      substrate_concordance,
+      substrate_decider,
+      ec_protein,
+      ec_nonprotein,
+      go_protein,
+      go_nonprotein,
+      is_protein_catalytic_background,
       catalytic_status,
       n_evidence_dimensions,
       evidence_tier,
@@ -79,7 +88,8 @@ build_unified_summary <- function(kinases_pkg, phosphatases_pkg) {
       acts_on_protein, acts_on_nonprotein, nonprotein_substrate_type, dual_protein_nonprotein,
       catalytic_status, n_evidence_dimensions,
       evidence_sources = .evidence_sources_string(df, flags, labels),
-      evidence_tier, curated_core, is_catalytic_background)
+      evidence_tier, curated_core, is_catalytic_background,
+      substrate_call, is_protein_catalytic_background)
   }
   bind_rows(thin(kinases_pkg,      "kinase",      KINASE_SOURCE_FLAGS,      KINASE_SOURCE_LABELS),
             thin(phosphatases_pkg, "phosphatase", PHOSPHATASE_SOURCE_FLAGS, PHOSPHATASE_SOURCE_LABELS)) |>

@@ -43,6 +43,13 @@ message(sprintf("human_phosphoenzymes: %d rows; membership_provenance: %d rows",
 
 if (!requireNamespace("usethis", quietly = TRUE))
   stop("Package 'usethis' is required to write data/*.rda.")
+
+# Stamp term-set md5s onto every shipped table as a verifiable attribute.
+term_set_md5 <- result$term_set_md5
+attr(human_kinases,        "term_set_md5") <- term_set_md5
+attr(human_phosphatases,   "term_set_md5") <- term_set_md5
+attr(human_phosphoenzymes, "term_set_md5") <- term_set_md5
+
 usethis::use_data(human_kinases, human_phosphatases, human_phosphoenzymes,
                   compress = "xz", overwrite = TRUE)
 
@@ -70,7 +77,11 @@ manifest <- list(
     source  = src$source[i],
     file    = src$file[i],
     version = src$version[i],
-    fetched = as.character(src$fetched[i]))))
+    fetched = as.character(src$fetched[i]))),
+  term_sets = as.list(term_set_md5))
+
+stopifnot("term-set md5 stamp disagrees with manifest" =
+  identical(as.list(attr(human_kinases, "term_set_md5")), manifest$term_sets))
 
 if (requireNamespace("yaml", quietly = TRUE)) {
   yaml::write_yaml(manifest, file.path("inst", "build_manifest.yaml"))
