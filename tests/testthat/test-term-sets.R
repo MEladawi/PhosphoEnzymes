@@ -55,3 +55,18 @@ test_that("resolve_term_sets builds EC matchers and GO id sets per class", {
   expect_true("ENSGL"  %in% res$kinase$go_nonprotein_ids)
   expect_true("ENSGPP" %in% res$phosphatase$go_protein_ids)
 })
+
+test_that("validate_term_set passes the default set and catches seeded faults", {
+  source(build_file("utils.R"),     local = TRUE)
+  source(build_file("term_sets.R"), local = TRUE)
+  ts <- load_term_sets(extdata_dir())
+  issues <- validate_term_set(ts)
+  expect_false(any(issues$severity == "error"))
+  # seed an overlap fault: add a duplicate of a protein EC row tagged nonprotein
+  bad <- ts
+  ke  <- ts$tables$kinase_ec
+  dup <- dplyr::mutate(dplyr::filter(ke, term_id == "2.7.10.-"), substrate = "nonprotein")
+  bad$tables$kinase_ec <- dplyr::bind_rows(ke, dup)
+  bad_issues <- validate_term_set(bad)
+  expect_true(any(bad_issues$severity == "error" & grepl("overlap", bad_issues$message)))
+})

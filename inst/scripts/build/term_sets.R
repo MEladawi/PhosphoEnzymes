@@ -64,3 +64,58 @@ resolve_term_sets <- function(term_sets, go_gmt_path) {
     gmt_accessions = names(gmt),
     md5            = term_sets$md5)
 }
+
+# Structural + provenance validation. Returns a tibble(severity, table, term_id, message).
+# `severity == "error"` rows are fatal for the DEFAULT set (the caller stops); for a user set
+# they downgrade to warnings at the call site. When `resolved` is supplied (built against a
+# GMT), term-id resolution and the reverse canaries are also checked.
+validate_term_set <- function(term_sets, resolved = NULL,
+                              reverse_canaries = TERM_SET_REVERSE_CANARIES) {
+  issues <- list()
+  add <- function(severity, table, term_id, message)
+    issues[[length(issues) + 1]] <<- tibble(severity = severity, table = table,
+                                            term_id = term_id, message = message)
+
+  for (nm in names(term_sets$tables)) {
+    tbl <- term_sets$tables[[nm]]
+    need <- c("term_id", "class", "substrate", "substrate_subtype", "role", "scope", "citation", "note")
+    miss <- setdiff(need, names(tbl))
+    if (length(miss)) add("error", nm, NA, paste("missing columns:", paste(miss, collapse = ",")))
+    no_cite <- tbl$term_id[is.na(tbl$citation) | tbl$citation == ""]
+    for (t in no_cite) add("error", nm, t, "missing citation")
+    rig <- filter(tbl, role == "rigor+substrate")
+    bad_np <- rig$term_id[rig$substrate == "nonprotein" &
+                            (is.na(rig$substrate_subtype) | rig$substrate_subtype == "")]
+    for (t in bad_np) add("error", nm, t, "nonprotein rigor row lacks substrate_subtype")
+    umb <- filter(tbl, role == "rigor_umbrella")
+    bad_umb <- umb$term_id[umb$substrate != "na"]
+    for (t in bad_umb) add("error", nm, t, "umbrella row must have substrate == na")
+  }
+  for (nm in names(term_sets$tables)) {
+    tbl <- filter(term_sets$tables[[nm]], role == "rigor+substrate")
+    dup <- tbl |> summarise(n_sub = n_distinct(substrate), .by = term_id) |> filter(n_sub > 1)
+    for (t in dup$term_id) add("error", nm, t, "substrate overlap: term_id tagged both protein and nonprotein")
+  }
+  if (!is.null(resolved)) {
+    for (cls in c("kinase", "phosphatase")) {
+      go_tbl <- term_sets$tables[[paste0(cls, "_go")]]
+      unresolved <- setdiff(go_tbl$term_id, resolved$gmt_accessions)
+      for (t in unresolved) add("error", paste0(cls, "_go"), t, "GO term_id not present in the pinned GMT release")
+    }
+    for (canary in reverse_canaries) {
+      hits <- resolved[[canary$class]]$go_protein_ids
+      if (canary$ensembl %in% hits)
+        add("error", paste0(canary$class, "_go"), canary$symbol,
+            paste0("reverse canary: ", canary$symbol, " must have go_protein == FALSE"))
+    }
+  }
+  if (length(issues)) list_rbind(issues) else
+    tibble(severity = character(), table = character(), term_id = character(), message = character())
+}
+
+# Pure non-protein enzymes that must never carry a protein-activity GO leaf (the guard against
+# EC-derived electronic GO leaking a non-protein enzyme into the protein set). Ensembl IDs are
+# pinned; update if an Ensembl release retires one.
+TERM_SET_REVERSE_CANARIES <- list(
+  list(class = "kinase",      symbol = "PI4KA", ensembl = "ENSG00000241973"),
+  list(class = "phosphatase", symbol = "PSPH",  ensembl = "ENSG00000146733"))
