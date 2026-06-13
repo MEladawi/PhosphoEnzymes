@@ -9,3 +9,17 @@
 ^doc$
 ^.*\.BiocCheck$
 ^\.[^/]+$
+# Raw source snapshots: kept in the source repository for deterministic regeneration
+# (inst/scripts/make-data.R reads them), but excluded from the built package so the
+# tarball stays lean. The shipped artifact is data/human_kinases.rda; SOURCES.tsv and
+# SOURCES.md carry the attribution and still ship.
+^inst/extdata/hgnc_complete_set\.txt$
+^inst/extdata/pkinfam\.txt$
+^inst/extdata/uniprot_kinase_KW-0418_human\.tsv$
+^inst/extdata/go_mf_genesets_.*\.gmt$
+^inst/extdata/kinase\.com_manning_list\.xls$
+^inst/extdata/IDG_dark_kinase_list\.csv$
+^inst/extdata/kinhub_facts\.tsv$
+# The raw KinHub web page is never redistributed (no license); it is kept locally only
+# to regenerate kinhub_facts.tsv. Exclude it from the tarball as well as from git.
+^inst/extdata/kinhub_kinases\.html$
