@@ -1,0 +1,15 @@
+term_id,class,substrate,substrate_subtype,role,scope,citation,note
+3.1.3.16,phosphatase,protein,,rigor+substrate,exact,IUBMB; Miyamoto & Kakiuchi 1975 (10.1016/0005-2744(75)90046-7); Chen 2017,protein-Ser/Thr (phosphoprotein) phosphatase; covers CTD/FCP-SCP Ser phosphatases (verify at build)
+3.1.3.48,phosphatase,protein,,rigor+substrate,exact,IUBMB; Charbonneau 1989; Krueger & Saito 1992 (10.1073/pnas.89.16.7417); Chen 2017,protein-tyrosine phosphatase (incl. dual-specificity DUSPs)
+3.9.1.3,phosphatase,protein,,rigor+substrate,exact,IUBMB/BRENDA 3.9.1.3; Ek 2002,"protein-histidine phosphatase (PHPT1); EC class 3.9 (P-N bonds), outside 3.1.3 (named exception)"
+3.1.3.67,phosphatase,nonprotein,lipid,rigor+substrate,exact,IUBMB; Maehama & Dixon 1998 (10.1074/jbc.273.22.13375),PIP3 3-phosphatase (PTEN lipid leg; PTEN is dual via its protein ECs 3.1.3.16/48)
+3.1.3.64,phosphatase,nonprotein,lipid,rigor+substrate,exact,IUBMB,PI-3-phosphatase (myotubularin/MTM)
+3.1.3.36,phosphatase,nonprotein,lipid,rigor+substrate,exact,IUBMB,phosphoinositide-bisphosphatase
+3.1.3.86,phosphatase,nonprotein,lipid,rigor+substrate,exact,IUBMB,PIP3 5-phosphatase
+3.1.3.4,phosphatase,nonprotein,lipid,rigor+substrate,exact,IUBMB; xref GO:0008195,phosphatidate phosphatase
+3.1.3.25,phosphatase,nonprotein,metabolite,rigor+substrate,exact,IUBMB,inositol-monophosphatase (IMPase)
+3.1.3.5,phosphatase,nonprotein,nucleotide,rigor+substrate,exact,IUBMB,5'-nucleotidase (NT5E)
+3.1.3.1,phosphatase,nonprotein,other,rigor+substrate,exact,IUBMB,alkaline phosphatase
+3.1.3.2,phosphatase,nonprotein,other,rigor+substrate,exact,IUBMB,acid phosphatase
+3.6.1.1,phosphatase,nonprotein,nucleotide,rigor+substrate,exact,IUBMB/BRENDA; Hindupur 2018 (10.1038/nature25876),"inorganic pyrophosphatase (LHPP); EC class 3.6.1, outside 3.1.3; dual protein-His capability via GO (gate-decided)"
+3.1.3.3,phosphatase,nonprotein,metabolite,exclude,exact,IUBMB,"PSPH name-trap: acts on FREE O-phospho-L-serine (Ser biosynthesis, HAD), not a protein residue; exclude from ALL counts"

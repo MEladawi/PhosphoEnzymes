@@ -27,6 +27,12 @@ inst/extdata/*
 !inst/extdata/human_phosphoenzymes.csv
 !inst/extdata/membership_provenance.csv
 !inst/extdata/accepted_cross_class.csv
+# Cited EC/GO term-set tables (classification defaults, user-overridable)
+!inst/extdata/kinase_ec_terms.csv
+!inst/extdata/kinase_go_terms.csv
+!inst/extdata/phosphatase_ec_terms.csv
+!inst/extdata/phosphatase_go_terms.csv
+!inst/extdata/term-sets-README.md
 
 # Ignore dotfiles (.DS_Store, .Rhistory, .RData, .Rproj.user/, etc.), but keep the
 # repo's own meta files that must stay under version control.

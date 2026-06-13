@@ -1,0 +1,24 @@
+term_id,class,substrate,substrate_subtype,role,scope,citation,note
+2.7.10.-,kinase,protein,,rigor+substrate,subclass,IUBMB; Manning 2002 (10.1126/science.1075762),"protein-tyrosine kinases; RTK 2.7.10.1, nRTK 2.7.10.2"
+2.7.11.-,kinase,protein,,rigor+substrate,subclass,IUBMB; Manning 2002 (10.1126/science.1075762),protein-Ser/Thr kinases; bulk of the kinome
+2.7.12.-,kinase,protein,,rigor+substrate,subclass,IUBMB; Manning 2002 (10.1126/science.1075762),dual-specificity kinases; 2.7.12.2 = MAP2K
+2.7.13.-,kinase,protein,,rigor+substrate,subclass,IUBMB,protein-histidine kinases; expect ~empty in human (NME via GO)
+2.7.14.-,kinase,protein,,rigor+substrate,subclass,IUBMB EC 2.7.14.1; Elsholz 2012,"protein-arginine kinases (McsB); bacterial, expect empty in human; verify membership at build"
+2.7.1.183,kinase,protein,,rigor+substrate,exact,IUBMB EC 2.7.1.183,POMK; protein substrate inside the 2.7.1.x small-molecule block (named exception)
+2.7.1.37,kinase,protein,,exclude,exact,BRENDA 2.7.1.37,"legacy 'protein kinase'; deleted/transferred by NC-IUBMB; recognize & remap only, never classify"
+2.7.1.67,kinase,nonprotein,lipid,rigor+substrate,exact,IUBMB,1-PI 4-kinase (PI4K)
+2.7.1.68,kinase,nonprotein,lipid,rigor+substrate,exact,IUBMB,PI4P 5-kinase
+2.7.1.137,kinase,nonprotein,lipid,rigor+substrate,exact,IUBMB,PI 3-kinase (PIK3C3)
+2.7.1.153,kinase,nonprotein,lipid,rigor+substrate,exact,IUBMB,class I PI3K
+2.7.1.154,kinase,nonprotein,lipid,rigor+substrate,exact,IUBMB,class I PI3K
+2.7.1.107,kinase,nonprotein,lipid,rigor+substrate,exact,IUBMB,diacylglycerol kinase
+2.7.1.91,kinase,nonprotein,lipid,rigor+substrate,exact,IUBMB,sphingosine kinase
+2.7.1.138,kinase,nonprotein,lipid,rigor+substrate,exact,IUBMB,ceramide kinase
+2.7.1.127,kinase,nonprotein,metabolite,rigor+substrate,exact,IUBMB,inositol-trisphosphate 3-kinase
+2.7.1.1,kinase,nonprotein,carbohydrate,rigor+substrate,exact,IUBMB,hexokinase
+2.7.1.2,kinase,nonprotein,carbohydrate,rigor+substrate,exact,IUBMB,glucokinase
+2.7.4.6,kinase,nonprotein,nucleotide,rigor+substrate,exact,IUBMB,nucleoside-diphosphate kinase (NME1/2); dual with protein-His GO:0004673
+2.7.4.3,kinase,nonprotein,nucleotide,rigor+substrate,exact,IUBMB,adenylate kinase
+2.7.4.8,kinase,nonprotein,nucleotide,rigor+substrate,exact,IUBMB,guanylate kinase
+2.7.3.2,kinase,nonprotein,metabolite,rigor+substrate,exact,IUBMB EC 2.7.3,creatine kinase (N-acceptor); comprehensive-mode only
+2.7.3.3,kinase,nonprotein,metabolite,rigor+substrate,exact,IUBMB EC 2.7.3.3,"arginine kinase (metabolic, free L-Arg); distinct from protein-Arg kinase 2.7.14.1"

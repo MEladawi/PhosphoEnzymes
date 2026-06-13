@@ -1,0 +1,18 @@
+term_id,class,substrate,substrate_subtype,role,scope,citation,note
+GO:0004721,phosphatase,protein,,rigor+substrate,subtree,AmiGO,phosphoprotein phosphatase activity (protein umbrella; parent also GO:0140096)
+GO:0004722,phosphatase,protein,,rigor+substrate,subtree,AmiGO; xref EC 3.1.3.16,protein Ser/Thr phosphatase activity
+GO:0004725,phosphatase,protein,,rigor+substrate,subtree,AmiGO; xref EC 3.1.3.48,protein tyrosine phosphatase activity
+GO:0008138,phosphatase,protein,,rigor+substrate,subtree,AmiGO,protein Tyr/Ser/Thr phosphatase activity (dual)
+GO:0098627,phosphatase,protein,,rigor+substrate,exact,AmiGO/MetaCyc,protein arginine phosphatase activity
+GO:0101006,phosphatase,protein,,rigor+substrate,exact,AmiGO,"protein histidine phosphatase activity (PHPT1, LHPP)"
+GO:0033549,phosphatase,protein,,rigor+substrate,subtree,AmiGO,"MAP kinase phosphatase activity (spans GO:0017017, GO:1990439, GO:0008579)"
+GO:0016314,phosphatase,nonprotein,lipid,rigor+substrate,exact,AmiGO; xref EC 3.1.3.67,PIP3 3-phosphatase activity (PTEN)
+GO:0034595,phosphatase,nonprotein,lipid,rigor+substrate,exact,AmiGO,phosphatidylinositol-phosphate phosphatase activity
+GO:0004437,phosphatase,nonprotein,lipid,rigor+substrate,exact,AmiGO,inositol/phosphatidylinositol phosphatase activity
+GO:0008195,phosphatase,nonprotein,lipid,rigor+substrate,exact,AmiGO; xref EC 3.1.3.4,phosphatidate phosphatase activity
+GO:0008253,phosphatase,nonprotein,nucleotide,rigor+substrate,exact,AmiGO; xref EC 3.1.3.5,5'-nucleotidase activity
+GO:0004035,phosphatase,nonprotein,other,rigor+substrate,exact,AmiGO; xref EC 3.1.3.1,alkaline phosphatase activity
+GO:0003993,phosphatase,nonprotein,other,rigor+substrate,exact,AmiGO; xref EC 3.1.3.2,acid phosphatase activity
+GO:0004647,phosphatase,nonprotein,metabolite,exclude,exact,AmiGO,PSPH phosphoserine phosphatase activity; non-protein; harmonized to 'exclude' to match the EC 3.1.3.3 trap (a trap should not drive classification either way)
+GO:0016791,phosphatase,na,,rigor_umbrella,subtree,AmiGO,"phosphatase activity (broad); membership/typing only, never a substrate vote"
+GO:0016311,phosphatase,na,,rigor_umbrella,exact,AmiGO,dephosphorylation (biological process); context only
