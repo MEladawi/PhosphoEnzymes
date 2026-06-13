@@ -48,3 +48,18 @@ split_mapped_and_unmapped <- function(resolved_table, source_name, id_column = N
                       symbol = resolved_table$symbol[failed_to_map],
                       id     = source_ids))
 }
+
+# Parse an Ensembl-keyed GMT into a named list of Ensembl-id vectors, keyed by the GO
+# accession in each set-name's last "%"-field ("PROTEIN KINASE ACTIVITY%GOMF%GO:0004672").
+# Rows with fewer than three tab-fields (no members) are dropped. Shared by the GO loader
+# and the term-set resolver.
+read_gmt_accession_map <- function(gmt_path) {
+  rows <- str_split(read_lines(gmt_path), fixed("\t"))
+  rows <- rows[lengths(rows) >= 3]
+  accession_of <- map_chr(rows, \(row) {
+    fields <- str_split(row[1], fixed("%"))[[1]]
+    fields[length(fields)]
+  })
+  members <- map(rows, \(row) row[-(1:2)])
+  set_names(members, accession_of)
+}
