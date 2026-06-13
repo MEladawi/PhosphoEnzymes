@@ -14,7 +14,8 @@ load_chen_phosphatome <- function(chen_facts_path, hgnc_bridge) {
   # Resolve by Entrez ID then symbol (as the other legs do). A handful of Chen rows carry informal
   # names (Laforin, CIN) or pre-rename symbols (LPPR1, PPAPDC1A, TMEM55B) that resolve via neither
   # and flow into the unmapped record rather than being dropped silently; none are sanity genes.
-  chen <- read_tsv(chen_facts_path, show_col_types = FALSE) |>
+  chen <- read_tsv(chen_facts_path, show_col_types = FALSE,
+                   col_types = cols(entrez_id = col_character())) |>
     mutate(ensembl_gene_id = pmap_chr(list(entrez_id, symbol),
                                       ~ hgnc_bridge$resolve_to_ensembl(entrez_id = ..1,
                                                                        source_symbols = ..2)))
@@ -109,9 +110,11 @@ load_ec_phosphatome <- function(gene_metadata, uniprot_ec_table) {
     })) |>
     mutate(
       is_protein_phosphatase_ec = map_lgl(all_ec, ~ any(.x %in% PROTEIN_PHOSPHATASE_EC)),
-      # non-protein 3.1.3.x / 3.6.1.x codes (excluding the two protein needles) for substrate typing
+      # non-protein 3.1.3.x / 3.6.1.x codes (fully specified 4-digit only -- a wildcard like
+      # "3.1.3.-" names no substrate and must not trigger a non-protein call) minus the two
+      # protein needles, for substrate typing.
       nonprotein_phosphatase_ec = map(all_ec, ~ setdiff(
-        .x[str_detect(.x, "^3\\.1\\.3\\.|^3\\.6\\.1\\.")], PROTEIN_PHOSPHATASE_EC)))
+        .x[str_detect(.x, "^3\\.1\\.3\\.[0-9]|^3\\.6\\.1\\.[0-9]")], PROTEIN_PHOSPHATASE_EC)))
   list(
     ensembl_ids = ec_long |> filter(map_lgl(all_ec, ~ any(str_detect(.x, "^3\\.1\\.3\\.")))) |> pull(ensembl_gene_id),
     ec_table = ec_long)

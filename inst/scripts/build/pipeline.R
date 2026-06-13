@@ -129,3 +129,65 @@ build_kinase_list <- function(refresh_data    = TRUE,
 
   if (quiet) suppressMessages(run_pipeline()) else run_pipeline()
 }
+
+#' Build the human protein-phosphatase reference table.
+#'
+#' Mirrors [build_kinase_list()]: refresh/reuse the pinned sources, map every phosphatase leg to a
+#' base Ensembl ID through HGNC, type each gene by substrate via the phosphatase gate, and return
+#' the engine table plus the unmapped record. The structural catalog (Axis 1) is the Chen 2017
+#' phosphatome plus HGNC protein-phosphatase gene groups; Axis 2 is the surgical protein-EC
+#' allow-list (3.1.3.16 / 3.1.3.48).
+#'
+#' @inheritParams build_kinase_list
+#' @return (invisibly) a list with `phosphatases` (the engine table) and `unmapped`.
+build_phosphatase_list <- function(refresh_data    = TRUE,
+                                   data_in_dir     = "data_in",
+                                   quiet           = FALSE,
+                                   go_include_iea  = TRUE,
+                                   hgnc_archive_url = NULL) {
+
+  run_pipeline <- function() {
+    ensure_packages()
+    registry <- configure_registry(SOURCE_REGISTRY,
+                                   go_include_iea   = go_include_iea,
+                                   hgnc_archive_url = hgnc_archive_url)
+    message("Checking and refreshing source files ...")
+    update_sources(registry, data_in_dir, refresh = refresh_data)
+    path_for <- function(source_key) source_file_path(source_key, data_in_dir, registry)
+
+    message("Reading HGNC complete set ...")
+    hgnc_bridge <- build_hgnc_bridge(path_for("hgnc_complete_set"))
+
+    message("Loading phosphatase sources ...")
+    go_phosphatase_sets <- load_go_phosphatase_sets(path_for("go_mf_genesets"))
+    # Experimental support = the no-IEA phosphatase umbrella + protein-phosphatase sets.
+    go_experimental_ids <- load_go_experimental_ids(
+      file.path(data_in_dir, GO_GENESET_VARIANTS$no_iea$filename), c("GO:0016791", "GO:0004721"))
+    chen_source    <- load_chen_phosphatome(path_for("chen_phosphatome"), hgnc_bridge)
+    kw_source      <- load_uniprot_keyword_phosphatome(path_for("uniprot_keyword_phosphatase"), hgnc_bridge)
+    ec_source      <- load_ec_phosphatome(hgnc_bridge$gene_metadata, kw_source$ec_table)
+    hgnc_groups    <- load_hgnc_phosphatase_groups(hgnc_bridge$gene_metadata)
+
+    membership <- list(
+      chen               = chen_source$ensembl_ids,
+      hgnc_protein_group = hgnc_groups$protein_phosphatase_ids,
+      go_umbrella        = go_phosphatase_sets$phosphatase_activity_umbrella,
+      ec                 = ec_source$ensembl_ids,
+      uniprot_keyword    = kw_source$ensembl_ids)
+    universe_ensembl_ids <- reduce(membership, union) |>
+      intersect(hgnc_bridge$gene_metadata$ensembl_gene_id) |> sort()
+    message(sprintf("PHOSPHATASE UNIVERSE: %d genes", length(universe_ensembl_ids)))
+
+    unmapped_records <- bind_rows(chen_source$unmapped, kw_source$unmapped)
+
+    message("Classifying and assembling ...")
+    phosphatases_table <- classify_phosphatases(universe_ensembl_ids, hgnc_bridge,
+                                                go_phosphatase_sets, ec_source, membership,
+                                                chen_source$facts_table,
+                                                go_experimental_ids = go_experimental_ids)
+
+    invisible(list(phosphatases = phosphatases_table, unmapped = unmapped_records))
+  }
+
+  if (quiet) suppressMessages(run_pipeline()) else run_pipeline()
+}
