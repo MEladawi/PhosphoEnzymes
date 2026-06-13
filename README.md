@@ -34,7 +34,16 @@ or load time); provenance is recorded in `inst/build_manifest.yaml`.
 
 ## License & attribution
 
-The package code is MIT-licensed (see `LICENSE`). The source datasets it is built
-from (HGNC, UniProt, Manning et al. 2002, KinHub, the Gene Ontology, IUBMB EC, the
-IDG program) each carry their own terms; cite those upstream sources when you
-publish results derived from the shipped tables.
+Package **code** (`R/`, `inst/scripts/`) is released under the **MIT** license (see
+`LICENSE`). The **bundled data** tables (`data/*.rda`) are released under **CC BY 4.0**.
+This split is possible because every bundled input is itself redistributable: HGNC is
+CC0; UniProt (pkinfam, KW-0418) and the Gene Ontology gene sets are CC BY 4.0; the
+kinase.com/Manning kinome and the IDG understudied-kinase list are MIT via IDG
+DarkKinaseTools; IUBMB EC numbers are read as facts from HGNC. The KinHub web page
+carries no license, so it is **not redistributed verbatim** — instead the package
+bundles reconstructed, HGNC-normalized gene-membership facts derived from it
+(`inst/extdata/kinhub_facts.tsv`).
+
+Per-source license, version, URL, and attribution text are recorded in
+`inst/extdata/SOURCES.tsv` (and mirrored in `inst/CITATION`). Cite those upstream
+sources when you publish results derived from the shipped tables.
