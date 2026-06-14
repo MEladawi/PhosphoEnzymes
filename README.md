@@ -3,14 +3,29 @@
 A reproducible, substrate-aware reference of human **kinases and phosphatases**,
 keyed on base Ensembl gene IDs and typed by substrate class.
 
-> Status: the kinase reference is complete. The phosphatase tables, the unified
-> phospho-enzyme summary, and the regulatory-subunit companion are in progress;
-> their accessors are present but return data only once those tables are built.
+> Status: the kinase and protein-phosphatase references are complete and ship as
+> package data, together with a unified phospho-enzyme summary spanning both. A
+> regulatory-subunit companion is the one piece still forthcoming.
 
 ```r
 library(PhosphoEnzymes)
-get_kinases()                  # all kinases, one row per gene, typed by substrate
-get_kinases(mode = "strict")   # canonical set (>= 1 evidence dimension)
+
+# Three tables, one row per gene, typed by substrate:
+get_kinases()         # ~756 human kinases
+get_phosphatases()    # ~298 human protein phosphatases
+get_phosphoenzymes()  # ~1054-row class-agnostic summary spanning both
+
+# Two orthogonal filters that never couple --
+#   mode      = rigor      ("comprehensive" | "strict")
+#   substrate = what it acts on ("any" | "protein" | "nonprotein")
+get_kinases(mode = "strict")                              # >= 1 evidence dimension
+get_kinases(substrate = "protein")                        # protein-acting only
+get_phosphatases(mode = "strict", substrate = "nonprotein")
+
+# The EC/GO typing rules ship as cited data, and are overridable:
+get_term_set("kinase", "go")                              # read a rule table
+validate_term_set()                                       # lint the shipped defaults
+get_kinases(term_sets = my_rules)                         # re-type without rebuilding
 ```
 
 ## Evidence model
@@ -25,7 +40,13 @@ reviewed UniProt keyword); Bronze one axis without it; Provisional none. It is
 not a probability or a confidence score.
 
 Typing is substrate-aware: sequence-family membership is evidence of lineage, never
-an override of substrate (the PI3K / PTEN principle).
+an override of substrate (the PI3K / PTEN principle). Substrate is carried as two
+**co-equal** booleans, `acts_on_protein` and `acts_on_nonprotein` (summarised by
+`substrate_call` as `protein` / `nonprotein` / `dual` / `untyped`), so a bifunctional
+enzyme like PTEN stays `dual` rather than being collapsed to one label, and
+`nonprotein_substrate_type` records the chemical class (lipid, nucleotide, …). Rigor
+and substrate are independent: a strictly-curated lipid kinase survives `mode =
+"strict"` and is removed only if you also ask for `substrate = "protein"`.
 
 ## Build / provenance
 
@@ -38,12 +59,15 @@ or load time); provenance is recorded in `inst/build_manifest.yaml`.
 Package **code** (`R/`, `inst/scripts/`) is released under the **MIT** license (see
 `LICENSE`). The **bundled data** tables (`data/*.rda`) are released under **CC BY 4.0**.
 This split is possible because every bundled input is itself redistributable: HGNC is
-CC0; UniProt (pkinfam, KW-0418) and the Gene Ontology gene sets are CC BY 4.0; the
-kinase.com/Manning kinome and the IDG understudied-kinase list are MIT via IDG
-DarkKinaseTools; IUBMB EC numbers are read as facts from HGNC. The KinHub web page
-carries no license, so it is **not redistributed verbatim** — instead the package
-bundles reconstructed, HGNC-normalized gene-membership facts derived from it
-(`inst/extdata/kinhub_facts.tsv`).
+CC0; UniProt (pkinfam, keyword KW-0418 for kinases and KW-0904 for phosphatases) and
+the Gene Ontology gene sets are CC BY 4.0; the kinase.com/Manning kinome and the IDG
+understudied-kinase list are MIT via IDG DarkKinaseTools; IUBMB EC numbers are read as
+facts from HGNC; and the curated human pseudokinase list (the kinase `catalytic_status`
+source) is compiled from the published pseudokinome literature with a per-row citation.
+Two sources carry no redistribution license, so neither is reproduced verbatim — the
+KinHub web page and the Chen 2017 phosphatome are each bundled as reconstructed,
+HGNC-normalized gene-membership facts (`inst/extdata/kinhub_facts.tsv` and
+`inst/extdata/chen_phosphatome_facts.tsv`).
 
 Per-source license, version, URL, and attribution text are recorded in
 `inst/extdata/SOURCES.tsv` (and mirrored in `inst/CITATION`). Cite those upstream
