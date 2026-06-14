@@ -154,7 +154,9 @@ SOURCE_REGISTRY <- list(
     description    = "UniProtKB reviewed human, keyword KW-0904 (Protein phosphatase)",
     local_filename = "uniprot_phosphatase_KW-0904_human.tsv",
     download_url   = "https://rest.uniprot.org/uniprotkb/stream?query=%28organism_id%3A9606%29+AND+%28reviewed%3Atrue%29+AND+%28keyword%3AKW-0904%29&format=tsv&fields=accession,gene_primary,protein_name,ec,protein_families",
-    auto_updatable = FALSE,
+    # Live UniProt REST stream, identical in kind to the KW-0418 kinase leg, so it
+    # refreshes the same way -- not a pinned/reconstructed source.
+    auto_updatable = TRUE,
     read_version   = function(file_path) paste("UniProtKB reviewed KW-0904, fetched", file_modification_date(file_path))))
 
 # --- runtime configuration of the registry ----------------------------------
