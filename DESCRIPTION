@@ -1,5 +1,5 @@
 Package: PhosphoEnzymes
-Title: A Reproducible, Function-First Reference of Human Kinases and Phosphatases
+Title: A Reproducible, Substrate-Aware Reference of Human Kinases and Phosphatases
 Version: 0.99.1
 Authors@R:
     person(given = "Mahmoud", family = "Eladawi",
@@ -10,7 +10,7 @@ Description: A reproducible reference resource for the human phosphorylation
     machinery: protein kinases and protein phosphatases, assembled from
     multiple expert catalogs and keyed on base Ensembl gene IDs. Enzymes are
     typed by substrate class (protein vs lipid / nucleotide / carbohydrate)
-    via a function-first gate that keeps sequence-family membership as evidence
+    via a substrate-aware gate that keeps sequence-family membership as evidence
     rather than letting it override substrate (the PI3K / PTEN principle).
     Each gene carries a rigor metric counting distinct evidence classes
     (structural/evolutionary catalog and protein-specific EC) and a practical

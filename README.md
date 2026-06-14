@@ -1,6 +1,6 @@
 # PhosphoEnzymes
 
-A reproducible, function-first reference of human **kinases and phosphatases**,
+A reproducible, substrate-aware reference of human **kinases and phosphatases**,
 keyed on base Ensembl gene IDs and typed by substrate class.
 
 > Status: the kinase reference is complete. The phosphatase tables, the unified
@@ -24,7 +24,7 @@ needs both axes; Silver one axis plus supplementary support (experimental GO or 
 reviewed UniProt keyword); Bronze one axis without it; Provisional none. It is
 not a probability or a confidence score.
 
-Typing is function-first: sequence-family membership is evidence of lineage, never
+Typing is substrate-aware: sequence-family membership is evidence of lineage, never
 an override of substrate (the PI3K / PTEN principle).
 
 ## Build / provenance

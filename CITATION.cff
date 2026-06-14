@@ -1,10 +1,10 @@
 cff-version: 1.2.0
 message: "If you use PhosphoEnzymes, please cite it as below."
-title: "PhosphoEnzymes: a reproducible, function-first reference of human kinases and phosphatases"
+title: "PhosphoEnzymes: a reproducible, substrate-aware reference of human kinases and phosphatases"
 abstract: >-
   A reproducible reference resource for the human phosphorylation machinery -- protein
   kinases and protein phosphatases -- assembled from multiple expert catalogs, keyed on
-  base Ensembl gene IDs, and typed by substrate class via a function-first gate that keeps
+  base Ensembl gene IDs, and typed by substrate class via a substrate-aware gate that keeps
   sequence-family membership as evidence rather than an override of substrate. Each gene
   carries a rigor metric counting independent evidence types and a practical evidence tier.
 type: software

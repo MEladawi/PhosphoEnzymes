@@ -1,6 +1,6 @@
-#' PhosphoEnzymes: a reproducible reference of human kinases and phosphatases
+#' PhosphoEnzymes: a reproducible, substrate-aware reference of human kinases and phosphatases
 #'
-#' A function-first reference resource for the human phosphorylation machinery,
+#' A substrate-aware reference resource for the human phosphorylation machinery,
 #' keyed on base Ensembl gene IDs and typed by substrate class. It ships the
 #' kinase master ([get_kinases()]), the protein-phosphatase master
 #' ([get_phosphatases()]), and a thin class-agnostic summary spanning both

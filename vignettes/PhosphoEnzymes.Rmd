@@ -1,5 +1,5 @@
 ---
-title: "PhosphoEnzymes: human kinases and phosphatases"
+title: "PhosphoEnzymes: A Reproducible, Substrate-Aware Reference of Human Kinases and Phosphatases"
 author: "Mahmoud Eladawi"
 output:
   BiocStyle::html_document:
@@ -22,7 +22,7 @@ machinery: protein kinases and protein phosphatases, assembled from several
 expert catalogs, keyed on base (unversioned) Ensembl gene IDs, and typed by
 **what each enzyme acts on**.
 
-The organizing idea is *function first*. Every gene is placed on two
+The organizing idea is *substrate awareness*. Every gene is placed on two
 **independent** axes:
 
 - **Rigor** -- how well the gene's catalytic identity is established (how many

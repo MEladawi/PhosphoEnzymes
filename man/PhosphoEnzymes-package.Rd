@@ -4,9 +4,9 @@
 \name{PhosphoEnzymes-package}
 \alias{PhosphoEnzymes}
 \alias{PhosphoEnzymes-package}
-\title{PhosphoEnzymes: a reproducible reference of human kinases and phosphatases}
+\title{PhosphoEnzymes: a reproducible, substrate-aware reference of human kinases and phosphatases}
 \description{
-A function-first reference resource for the human phosphorylation machinery,
+A substrate-aware reference resource for the human phosphorylation machinery,
 keyed on base Ensembl gene IDs and typed by substrate class. It ships the
 kinase master (\code{\link[=get_kinases]{get_kinases()}}), the protein-phosphatase master
 (\code{\link[=get_phosphatases]{get_phosphatases()}}), and a thin class-agnostic summary spanning both
