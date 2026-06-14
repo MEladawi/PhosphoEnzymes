@@ -1,0 +1,20 @@
+First rows of the kinase GO rule table:
+# A tibble: 6 × 4
+  term_id    substrate substrate_subtype role           
+  <chr>      <chr>     <chr>             <chr>          
+1 GO:0004672 protein   ""                rigor+substrate
+2 GO:0004674 protein   ""                rigor+substrate
+3 GO:0106310 protein   ""                rigor+substrate
+4 GO:0004713 protein   ""                rigor+substrate
+5 GO:0004712 protein   ""                rigor+substrate
+6 GO:0004673 protein   ""                rigor+substrate
+
+Linting the four shipped defaults (0 issues = clean):
+[1] 0
+
+Round-trip identity on substrate_call:
+[1] TRUE
+
+Lipid-typed kinases, shipped vs lipid-GO-dropped:
+shipped retyped 
+     38      16 

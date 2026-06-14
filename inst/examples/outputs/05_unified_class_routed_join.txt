@@ -1,0 +1,15 @@
+Kinase summary rows joined to kinase_family:
+  symbol evidence_tier kinase_family
+1  SCYL3        Bronze          SCY1
+2    FGR        Silver           Src
+3    AK2        Silver          <NA>
+4 CAMKK1          Gold         CAMKK
+5   PDK4          Gold          PDHK
+
+Phosphatase summary rows joined to phosphatase_fold:
+  symbol substrate_call phosphatase_fold
+1  MTMR7           dual              CC1
+2  PPP5C        protein             PPPL
+3 ANGEL1        untyped             <NA>
+4   ACP3           dual               HP
+5 MTMR11        untyped              CC1

@@ -1,0 +1,15 @@
+Kinase substrate flags (acts_on_protein x acts_on_nonprotein):
+               acts_on_nonprotein
+acts_on_protein FALSE TRUE
+          FALSE   105   95
+          TRUE    541   15
+
+PTEN, straight from the shipped table:
+  symbol evidence_tier acts_on_protein acts_on_nonprotein substrate_call
+1   PTEN          Gold            TRUE               TRUE           dual
+  nonprotein_substrate_type
+1                     lipid
+
+PTEN substrate provenance:
+  substrate_evidence substrate_decider substrate_concordance
+1            Chen+EC         Chen-flag            concordant

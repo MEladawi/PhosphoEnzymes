@@ -1,0 +1,24 @@
+Phosphatase evidence_tier x substrate_call:
+             substrate
+evidence_tier dual nonprotein protein untyped
+  Bronze         1          7      11      18
+  Gold          14         10     112       0
+  Provisional    0         31      17      16
+  Silver         8         31      18       4
+
+Gold-tier phosphatases that act on a non-protein substrate:
+   symbol substrate_call nonprotein_substrate_type
+1    ACP1           dual                     other
+2    ACP3           dual          nucleotide|other
+3   EPM2A           dual                     other
+4    FIG4           dual                     lipid
+5    MDP1           dual                     other
+6    MTM1           dual                     lipid
+7     PGP           dual                     other
+8    PTEN           dual                     lipid
+9  PTP4A3           dual                     other
+10 PTPMT1           dual                     lipid
+
+Strict kinases by substrate (rigor filter keeps non-protein enzymes):
+    strict_any strict_nonprot 
+           578             46 

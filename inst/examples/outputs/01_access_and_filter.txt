@@ -1,0 +1,12 @@
+Table sizes (rows):
+       kinases   phosphatases phosphoenzymes 
+           756            298           1054 
+
+Kinase funnel across the two knobs:
+ comprehensive         strict strict_protein strict_nonprot 
+           756            578            506             46 
+
+Unified summary by class:
+
+     kinase phosphatase 
+        756         298 
