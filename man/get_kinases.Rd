@@ -6,7 +6,8 @@
 \usage{
 get_kinases(
   mode = c("comprehensive", "strict"),
-  substrate = c("any", "protein", "nonprotein")
+  substrate = c("any", "protein", "nonprotein"),
+  term_sets = NULL
 )
 }
 \arguments{
@@ -17,6 +18,17 @@ specific EC).}
 
 \item{substrate}{\code{"any"} (default), \code{"protein"} (keep \code{acts_on_protein}), or
 \code{"nonprotein"} (keep \code{acts_on_nonprotein}). A dual enzyme satisfies both.}
+
+\item{term_sets}{\code{NULL} (default) returns the shipped master, typed against the
+default EC/GO term sets. Otherwise a named list of EC/GO term-set tables
+(any subset of \code{kinase_ec} / \code{kinase_go} / \code{phosphatase_ec} /
+\code{phosphatase_go}; missing tables fall back to the shipped defaults) under
+which the substrate / rigor / provenance columns are recomputed from raw
+per-gene evidence before the \code{mode} / \code{substrate} filters apply -- so the
+catalog can be re-typed under a customized term set without rebuilding.
+Supplying a term set with validation errors warns (it does not stop), unlike
+the default set which is held to a stricter contract. This path requires the
+\code{dplyr}, \code{purrr}, and \code{stringr} packages; the default path does not.}
 }
 \value{
 A \link[tibble:tibble]{tibble} of human kinases, one row per gene.

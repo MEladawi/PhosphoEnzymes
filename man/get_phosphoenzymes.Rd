@@ -20,6 +20,11 @@ taxonomy. Ships all rows including Provisional; the summary has no \code{mode} k
 \code{evidence_tier} / \code{curated_core} yourself), but it carries \code{acts_on_protein} /
 \code{acts_on_nonprotein}, so the \code{substrate} knob applies.
 }
+\details{
+The \verb{term_sets=} reclassification override is class-specific (it recomputes one class's columns
+from that class's per-gene evidence) and so is not offered here. To re-type under a custom term
+set, call \code{\link[=get_kinases]{get_kinases()}} / \code{\link[=get_phosphatases]{get_phosphatases()}} with \verb{term_sets=} and join the results.
+}
 \examples{
 pe <- get_phosphoenzymes()
 table(pe$regulator_class)

@@ -11,6 +11,16 @@
 #'   specific EC).
 #' @param substrate `"any"` (default), `"protein"` (keep `acts_on_protein`), or
 #'   `"nonprotein"` (keep `acts_on_nonprotein`). A dual enzyme satisfies both.
+#' @param term_sets `NULL` (default) returns the shipped master, typed against the
+#'   default EC/GO term sets. Otherwise a named list of EC/GO term-set tables
+#'   (any subset of `kinase_ec` / `kinase_go` / `phosphatase_ec` /
+#'   `phosphatase_go`; missing tables fall back to the shipped defaults) under
+#'   which the substrate / rigor / provenance columns are recomputed from raw
+#'   per-gene evidence before the `mode` / `substrate` filters apply -- so the
+#'   catalog can be re-typed under a customized term set without rebuilding.
+#'   Supplying a term set with validation errors warns (it does not stop), unlike
+#'   the default set which is held to a stricter contract. This path requires the
+#'   `dplyr`, `purrr`, and `stringr` packages; the default path does not.
 #' @return A [tibble][tibble::tibble] of human kinases, one row per gene.
 #' @examples
 #' k <- get_kinases()
@@ -18,10 +28,15 @@
 #' get_kinases(mode = "strict", substrate = "protein")
 #' @export
 get_kinases <- function(mode = c("comprehensive", "strict"),
-                        substrate = c("any", "protein", "nonprotein")) {
+                        substrate = c("any", "protein", "nonprotein"),
+                        term_sets = NULL) {
   mode <- match.arg(mode)
   substrate <- match.arg(substrate)
-  .pe_filter(.pe_load("human_kinases"), mode, substrate)
+  if (is.null(term_sets)) {
+    .pe_filter(.pe_load("human_kinases"), mode, substrate)
+  } else {
+    .pe_reclassify("human_kinases", "kinase", term_sets, mode, substrate)
+  }
 }
 
 #' Access the human protein-phosphatase reference table
@@ -34,10 +49,15 @@ get_kinases <- function(mode = c("comprehensive", "strict"),
 #' get_phosphatases(mode = "strict", substrate = "protein")
 #' @export
 get_phosphatases <- function(mode = c("comprehensive", "strict"),
-                             substrate = c("any", "protein", "nonprotein")) {
+                             substrate = c("any", "protein", "nonprotein"),
+                             term_sets = NULL) {
   mode <- match.arg(mode)
   substrate <- match.arg(substrate)
-  .pe_filter(.pe_load("human_phosphatases"), mode, substrate)
+  if (is.null(term_sets)) {
+    .pe_filter(.pe_load("human_phosphatases"), mode, substrate)
+  } else {
+    .pe_reclassify("human_phosphatases", "phosphatase", term_sets, mode, substrate)
+  }
 }
 
 #' Access the unified human phospho-enzyme summary
@@ -48,6 +68,10 @@ get_phosphatases <- function(mode = c("comprehensive", "strict"),
 #' taxonomy. Ships all rows including Provisional; the summary has no `mode` knob (filter on
 #' `evidence_tier` / `curated_core` yourself), but it carries `acts_on_protein` /
 #' `acts_on_nonprotein`, so the `substrate` knob applies.
+#'
+#' The `term_sets=` reclassification override is class-specific (it recomputes one class's columns
+#' from that class's per-gene evidence) and so is not offered here. To re-type under a custom term
+#' set, call [get_kinases()] / [get_phosphatases()] with `term_sets=` and join the results.
 #'
 #' @param substrate `"any"` (default), `"protein"`, or `"nonprotein"`.
 #' @return A [tibble][tibble::tibble] spanning both enzyme classes.
@@ -235,6 +259,116 @@ validate_term_set <- function(term_sets = NULL) {
   if (is.null(attr(df, "term_set_md5")) && !is.null(keep_attr))
     attr(df, "term_set_md5") <- keep_attr
   df
+}
+
+#' @keywords internal
+#' @noRd
+# Normalize a user `term_sets=` argument into the four-table named list the recompute path needs.
+# Accepts either the full four-table list (kinase_ec / kinase_go / phosphatase_ec / phosphatase_go)
+# or the value of get_term_set() (a single table); a single table is insufficient on its own, so any
+# missing default table is filled from the shipped defaults. Returns a named list of data frames.
+.pe_normalize_term_sets <- function(term_sets) {
+  keys <- c("kinase_ec", "kinase_go", "phosphatase_ec", "phosphatase_go")
+  defaults <- stats::setNames(lapply(keys, function(k) {
+    parts <- strsplit(k, "_", fixed = TRUE)[[1]]
+    get_term_set(parts[1], parts[2])
+  }), keys)
+  if (is.null(names(term_sets)) || !all(names(term_sets) %in% keys)) {
+    stop("term_sets must be a named list with names among: ",
+         paste(keys, collapse = ", "),
+         " (e.g. list(kinase_ec = ..., kinase_go = ..., phosphatase_ec = ..., phosphatase_go = ...))")
+  }
+  # Replace whole tables (never merge column-wise): a supplied table wins, the rest stay default.
+  for (k in intersect(names(term_sets), keys)) defaults[[k]] <- term_sets[[k]]
+  defaults
+}
+
+#' @keywords internal
+#' @noRd
+# Re-type the shipped master for one class under a user-supplied term set, then
+# apply mode/substrate. This is the ONLY path that touches the dplyr/purrr/
+# stringr/readr Suggests; it guards on them up front. The default (no term_sets=)
+# accessors stay dependency-free base R. The recompute mirrors the build gate
+# exactly via the runtime twin in R/term-sets-runtime.R, so passing the default
+# term set reproduces the shipped table.
+.pe_reclassify <- function(dataset, class, term_sets, mode, substrate) {
+  needed <- c("dplyr", "purrr", "stringr", "readr")
+  missing_pkgs <- needed[!vapply(
+    needed, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing_pkgs)) {
+    stop("term_sets= reclassification requires the dplyr, purrr, stringr ",
+         "and readr packages; install: ",
+         paste(missing_pkgs, collapse = ", "))
+  }
+  tables <- .pe_normalize_term_sets(term_sets)
+
+  # User term sets degrade to warnings (only the default set hard-errors); summarize any error rows.
+  issues <- validate_term_set(tables)
+  err <- issues[issues$severity == "error", , drop = FALSE]
+  if (nrow(err)) {
+    warning("supplied term_sets has ", nrow(err), " validation error(s); proceeding anyway:\n",
+            paste0("  - [", err$table, "] ", ifelse(is.na(err$term_id), "", paste0(err$term_id, ": ")),
+                   err$message, collapse = "\n"), call. = FALSE)
+  }
+
+  # The Ensembl-keyed GMT is not shipped in the installed package, so GO membership is resolved at
+  # the accession level: the per-gene `go_terms` in the sidecar (membership among the candidate GO
+  # accessions in the build-time GMT) is intersected with the term set's protein / non-protein /
+  # per-subtype GO accession lists. EC typing needs no gene-set file at all. The result is identical
+  # to the build's id-set membership for any term set drawn from the shipped candidate accessions.
+  go_tbl <- tibble::as_tibble(tables[[paste0(class, "_go")]])
+  ec_tbl <- tibble::as_tibble(tables[[paste0(class, "_ec")]])
+  go_acc <- .pe_resolve_go_accessions_class(go_tbl)
+  resolved_class <- .pe_resolve_ec_class(ec_tbl)
+
+  sidecar_path <- system.file("extdata", "substrate_evidence.csv", package = "PhosphoEnzymes")
+  if (!nzchar(sidecar_path)) stop("substrate_evidence sidecar not found in extdata")
+  sidecar <- readr::read_csv(sidecar_path, show_col_types = FALSE) |>
+    dplyr::filter(regulator_class == class)
+
+  # Build the per-gene evidence tibble exactly as classify.R / classify_phosphatases.R do: EC codes
+  # from splitting the sidecar's pipe field; the four co-equal GO/Chen substrate signals from the
+  # gene's annotated GO accessions intersected with the resolved accession lists.
+  evidence <- sidecar |>
+    dplyr::mutate(
+      all_ec_codes = purrr::map(ec_codes, .pe_split_pipe_delimited),
+      gene_go      = purrr::map(go_terms, .pe_split_pipe_delimited),
+      go_protein    = purrr::map_lgl(gene_go, \(g) any(g %in% go_acc$go_protein_accessions)),
+      go_nonprotein = purrr::map_lgl(gene_go, \(g) any(g %in% go_acc$go_nonprotein_accessions)),
+      go_nonprotein_subtype = purrr::map_chr(gene_go, \(g) {
+        hits <- names(go_acc$go_nonprotein_subtype_accessions)[
+          purrr::map_lgl(go_acc$go_nonprotein_subtype_accessions, \(acc) any(g %in% acc))]
+        paste(hits, collapse = "|")
+      }),
+      chen_nonprotein       = as.logical(chen_nonprotein),
+      in_structural_catalog = as.logical(in_structural_catalog),
+      supplementary_support = as.logical(supplementary_support),
+      go_experimental_protein = as.logical(go_experimental_protein),
+      catalytic_status      = as.character(catalytic_status)) |>
+    dplyr::select(ensembl_gene_id, all_ec_codes, go_protein, go_nonprotein, go_nonprotein_subtype,
+                  chen_nonprotein, in_structural_catalog, supplementary_support,
+                  go_experimental_protein, catalytic_status)
+
+  recomputed <- .pe_apply_term_sets(evidence, resolved_class)
+
+  # Columns the recompute owns: replace these on the master, keep everything else (taxonomy,
+  # identifiers, labels, membership flags) from the shipped table.
+  recomputed_cols <- c(
+    "acts_on_protein", "acts_on_nonprotein", "nonprotein_substrate_type",
+    "dual_protein_nonprotein", "substrate_call", "substrate_evidence",
+    "substrate_concordance", "substrate_decider", "ec_protein", "ec_nonprotein",
+    "go_protein", "go_nonprotein", "n_evidence_dimensions", "evidence_tier",
+    "curated_core", "is_catalytic_background", "is_protein_catalytic_background")
+
+  master <- .pe_load(dataset)
+  keep_attr <- attr(master, "term_set_md5")
+  master_kept <- master[, setdiff(names(master), setdiff(recomputed_cols, "ensembl_gene_id")), drop = FALSE]
+  recompute_join <- recomputed[, intersect(c("ensembl_gene_id", recomputed_cols), names(recomputed)), drop = FALSE]
+
+  out <- dplyr::left_join(master_kept, recompute_join, by = dplyr::join_by(ensembl_gene_id))
+  out <- out[, names(master), drop = FALSE]   # restore the shipped column order
+  if (!is.null(keep_attr)) attr(out, "term_set_md5") <- keep_attr
+  .pe_filter(out, mode, substrate)
 }
 
 #' @keywords internal

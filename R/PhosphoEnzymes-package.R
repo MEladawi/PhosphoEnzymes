@@ -18,3 +18,18 @@
 #'
 #' @keywords internal
 "_PACKAGE"
+
+# Data-masked column names referenced inside the dplyr verbs of the term-set
+# runtime twin (R/term-sets-runtime.R). Declared so R CMD check does not flag
+# them as undefined globals; they are columns of the term-set tables and the
+# per-gene evidence tibble.
+utils::globalVariables(c(
+  "role", "substrate", "substrate_subtype", "term_id", "scope",
+  "all_ec_codes", "in_structural_catalog", "supplementary_support",
+  "go_protein", "go_nonprotein", "go_nonprotein_subtype", "chen_nonprotein",
+  "go_experimental_protein", "catalytic_status",
+  "ec_rigor", "ec_protein", "ec_nonprotein", "ec_nonprotein_subtype",
+  "n_evidence_dimensions", "curated_core", "acts_on_protein",
+  "acts_on_nonprotein", "substrate_call",
+  # referenced inside the dplyr verbs of .pe_reclassify (R/accessors.R)
+  "regulator_class", "ec_codes", "ensembl_gene_id", "go_terms", "gene_go"))
