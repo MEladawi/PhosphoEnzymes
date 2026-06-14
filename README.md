@@ -12,7 +12,7 @@ library(PhosphoEnzymes)
 
 # Three tables, one row per gene, typed by substrate:
 get_kinases()         # ~756 human kinases
-get_phosphatases()    # ~298 human protein phosphatases
+get_phosphatases()    # ~298 human phosphatases (protein + non-protein; 181 protein-acting)
 get_phosphoenzymes()  # ~1054-row class-agnostic summary spanning both
 
 # Two orthogonal filters that never couple --
