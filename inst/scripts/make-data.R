@@ -14,10 +14,18 @@ stopifnot("run from the package root (DESCRIPTION not found)" = file.exists("DES
 build_dir <- file.path("inst", "scripts", "build")
 invisible(lapply(list.files(build_dir, pattern = "[.]R$", full.names = TRUE), source))
 
+# Default: build offline from the committed snapshots (deterministic, reproducible).
+# Set PHOSPHOENZYMES_REFRESH=true to re-fetch the auto-updatable sources first; the
+# scheduled maintenance workflow uses this to detect upstream changes. A manual run
+# stays offline unless the variable is set.
+refresh_sources <- tolower(Sys.getenv("PHOSPHOENZYMES_REFRESH", "false")) %in%
+  c("true", "1", "yes")
+if (refresh_sources) message("PHOSPHOENZYMES_REFRESH set: re-fetching sources.")
+
 # --- Kinases -----------------------------------------------------------------
-# Build offline from the committed snapshots; assert the functional-gate QC gate.
+# Build from the snapshots; assert the functional-gate QC gate.
 result <- build_kinase_list(
-  refresh_data = FALSE,
+  refresh_data = refresh_sources,
   data_in_dir  = "inst/extdata",
   output_dir   = tempfile("kinase_build_"),   # legacy file outputs not needed here
   write_files  = FALSE,
@@ -30,7 +38,8 @@ human_kinases <- harmonize_kinases_to_package_schema(result$kinases)
 message(sprintf("human_kinases: %d rows x %d cols", nrow(human_kinases), ncol(human_kinases)))
 
 # --- Phosphatases ------------------------------------------------------------
-phos <- build_phosphatase_list(refresh_data = FALSE, data_in_dir = "inst/extdata", quiet = FALSE)
+phos <- build_phosphatase_list(refresh_data = refresh_sources,
+                               data_in_dir = "inst/extdata", quiet = FALSE)
 human_phosphatases <- harmonize_phosphatases_to_package_schema(phos$phosphatases)
 message(sprintf("human_phosphatases: %d rows x %d cols (protein subset %d)",
                 nrow(human_phosphatases), ncol(human_phosphatases), sum(human_phosphatases$acts_on_protein)))

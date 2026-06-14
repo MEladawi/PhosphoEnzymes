@@ -1,0 +1,92 @@
+# Scheduled maintenance: re-fetch the auto-updatable upstream sources, rebuild the
+# shipped tables through the QC gate, and open a pull request for review only when
+# the table content actually changed. The build stays deterministic -- each release
+# is still a pinned, committed snapshot; this only moves the trigger from a manual
+# step to a weekly schedule. Pinned sources (KinHub, Chen, curated pseudokinases)
+# are not refreshed.
+name: refresh-sources
+
+on:
+  schedule:
+    - cron: "23 6 * * 1"   # Mondays 06:23 UTC
+  workflow_dispatch: {}      # manual "Run workflow" button
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: refresh-sources
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      # Install the package's dependencies, including Suggests (the build engine
+      # uses hgnc, usethis, yaml, readr, readxl, rvest, etc., all declared there).
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"all"'
+
+      - name: Refresh sources, rebuild, detect change
+        id: build
+        run: Rscript .github/scripts/refresh_release.R
+
+      - name: Open pull request on a real change
+        if: steps.build.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: auto/source-refresh
+          delete-branch: true
+          base: main
+          add-paths: |
+            data/*
+            inst/extdata/*
+            inst/build_manifest.yaml
+            DESCRIPTION
+            NEWS.md
+          commit-message: "data: automated source refresh to ${{ steps.build.outputs.version }}"
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          committer: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          title: "Data refresh: ${{ steps.build.outputs.version }}"
+          body-path: .github/pr_body.md
+          labels: data-refresh
+
+      # A GO term can go obsolete upstream without changing membership (a redundant
+      # grouping term does not), so no release PR opens. Raise an issue instead so
+      # the term-set curation edit is not buried in the run log.
+      - name: Flag an obsolete GO term when no release was prepared
+        if: steps.build.outputs.changed != 'true' && steps.build.outputs.obsolete == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "Obsolete GO term needs curation ($(date -u +%Y-%m-%d))" \
+            --body-file .github/obsolete_body.md \
+            --label data-refresh || true
+
+      # If the build or QC gate failed, surface it as an issue rather than a silent
+      # red run, so a bad upstream release is noticed and never auto-released.
+      - name: Report a failed refresh
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "Source refresh failed on $(date -u +%Y-%m-%d)" \
+            --body "The scheduled source refresh did not complete (build or QC gate failed). See the run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. No release was prepared." \
+            --label data-refresh || true
