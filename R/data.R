@@ -30,9 +30,12 @@
 #'   \item{ec_nonprotein}{Logical. A non-protein-substrate EC rule fired.}
 #'   \item{go_protein}{Logical. A protein-substrate GO kinase-activity term fired.}
 #'   \item{go_nonprotein}{Logical. A non-protein-substrate GO kinase-activity term fired.}
-#'   \item{catalytic_status}{"active" / "pseudo" / "uncertain". From the curated
-#'     pseudokinase set; a soft signal (a pseudokinase may carry a legacy EC), not a
-#'     veto.}
+#'   \item{catalytic_status}{"active" / "pseudo" / "uncertain". `pseudo` is sourced from
+#'     the curated pseudokinase set (`pseudokinases.csv`, 32 genes; TRIB1 etc.). `active`
+#'     is the complement-default (a kinase not on the curated pseudo list), not an
+#'     individually-verified catalytic assertion per gene: the active/pseudo distinction
+#'     is properly sourced, so read "active" as "not curated-pseudo", not "catalytically
+#'     confirmed". A soft signal (a pseudokinase may carry a legacy EC), not a veto.}
 #'   \item{is_catalytic_background}{Logical. Substrate-blind enrichment background:
 #'     `catalytic_status == "active"` AND `curated_core` (excludes pseudoenzymes and
 #'     zero-dimension genes), spanning protein and non-protein substrates alike.}
