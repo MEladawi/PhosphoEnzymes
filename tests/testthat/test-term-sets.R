@@ -108,9 +108,9 @@ test_that("GO:0052866 descendant set is pinned (broad-parent drift tripwire)", {
 })
 
 test_that("validate_term_set hard-errors on an obsolete GO term_id", {
-  source("../../inst/scripts/build/utils.R",     local = TRUE)
-  source("../../inst/scripts/build/term_sets.R", local = TRUE)
-  ts <- load_term_sets("../../inst/extdata")
+  source(build_file("utils.R"),     local = TRUE)
+  source(build_file("term_sets.R"), local = TRUE)
+  ts <- load_term_sets(extdata_dir())
   # The shipped default set is clean (the obsolete GO:0004437 was removed).
   expect_false(any(validate_term_set(ts)$severity == "error" &
                      grepl("obsolete", validate_term_set(ts)$message)))

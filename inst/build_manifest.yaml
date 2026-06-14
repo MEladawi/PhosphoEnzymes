@@ -4,15 +4,15 @@ tables:
   human_kinases:
     n_rows: 756
     n_cols: 55
-    md5: 2ed4c7ad552010e7f3eefa2c228eaa06
+    md5: 911bb9abd84ef4297f62a1a2dfd01258
   human_phosphatases:
     n_rows: 298
     n_cols: 53
-    md5: 9b8fd39418f3aa804db8ca81f017953d
+    md5: f24a9fc982b821025d6842e6d5a41e17
   human_phosphoenzymes:
     n_rows: 1054
     n_cols: 15
-    md5: b0cf62aad3ae92ce94e8a05dcebecd6f
+    md5: da183a65f5fc41dd50f592e106d8b729
 sources:
 - source: HGNC complete set (identifier bridge)
   file: hgnc_complete_set.txt
@@ -56,7 +56,7 @@ sources:
   version: UniProtKB reviewed KW-0904, fetched 2026-06-13
   fetched: '2026-06-13'
 term_sets:
-  kinase_ec: 8e9f6265e58671dbc0bedff802f1e9d0
-  kinase_go: ae6eb32c550a142716e7cb843db21050
-  phosphatase_ec: 1cde17b2354aed3e21fa66664da93c06
-  phosphatase_go: a5a6b19588640a3ae67705f9cd021878
+  kinase_ec: d928997e87ec9a33fc3c8f8be48c49e7
+  kinase_go: d582d0c0738a7b4719f91d4bda8c52cf
+  phosphatase_ec: 90f3689c5cc3dc93badc1484b69f087e
+  phosphatase_go: c0976c3f4cd24d6eb40993fafc0b8e92

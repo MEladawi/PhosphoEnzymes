@@ -1,6 +1,9 @@
 ---
 title: "PhosphoEnzymes: human kinases and phosphatases"
-output: BiocStyle::html_document
+author: "Mahmoud Eladawi"
+output:
+  BiocStyle::html_document:
+    toc_float: true
 vignette: >
   %\VignetteIndexEntry{PhosphoEnzymes}
   %\VignetteEngine{knitr::rmarkdown}
@@ -14,68 +17,254 @@ library(PhosphoEnzymes)
 
 # Overview
 
-`PhosphoEnzymes` provides class-specific master tables for the human
-phosphorylation machinery, keyed on base Ensembl gene IDs and typed by substrate
-class. Enzymes are typed by what they act on; sequence-family membership is
-evidence of lineage, not an override of substrate.
+`PhosphoEnzymes` is a reproducible reference of the human phosphorylation
+machinery: protein kinases and protein phosphatases, assembled from several
+expert catalogs, keyed on base (unversioned) Ensembl gene IDs, and typed by
+**what each enzyme acts on**.
 
-Both classes ship now: kinases via `get_kinases()`, protein phosphatases via
-`get_phosphatases()`, and a thin class-agnostic summary spanning both via
-`get_phosphoenzymes()`. The non-catalytic regulatory-subunit companion
-(`get_phosphatase_regulators()`) is a forthcoming addition.
+The organizing idea is *function first*. Every gene is placed on two
+**independent** axes:
+
+- **Rigor** -- how well the gene's catalytic identity is established (how many
+  distinct kinds of evidence support it), summarized as an `evidence_tier`.
+- **Substrate** -- the chemical class the enzyme phosphorylates or
+  dephosphorylates (protein, lipid, nucleotide, carbohydrate, ...).
+
+Crucially, **sequence-family membership is evidence of lineage, not an override
+of substrate**. A gene that sits inside a classical protein-kinase fold is not
+forced to be typed as a protein kinase if its biochemistry says it acts on a
+lipid. This is the *PI3K / PTEN principle*: PI3K-family members carry a
+protein-kinase-like fold but phosphorylate lipids, and PTEN dephosphorylates
+*both* a protein substrate and the lipid PIP3. The tables preserve that duality
+rather than collapsing each gene to a single label.
+
+Three accessors expose the data, plus the term sets that drove the typing:
+
+- `get_kinases()` -- the human kinase master.
+- `get_phosphatases()` -- the human protein-phosphatase master.
+- `get_phosphoenzymes()` -- a thin, class-agnostic summary spanning both.
+- `get_term_set()` / `validate_term_set()` -- the EC/GO rule tables shipped as
+  data, and a linter for custom rule tables.
 
 # Accessing the tables
 
-```{r load-kinases}
+```{r load-tables}
 k <- get_kinases()
 p <- get_phosphatases()
 c(kinases = nrow(k), phosphatases = nrow(p))
-# substrate is carried as co-equal columns; empty nonprotein_substrate_type = protein-only
-table(protein = k$acts_on_protein, nonprotein = k$nonprotein_substrate_type)
 ```
 
-```{r strict-example, eval = FALSE}
-get_kinases(mode = "strict")        # canonical set: >= 1 evidence dimension
-get_phosphatases(mode = "strict")
+Substrate is carried as co-equal boolean columns. `acts_on_protein` and
+`acts_on_nonprotein` are not mutually exclusive -- a *dual* enzyme is `TRUE` for
+both -- and `nonprotein_substrate_type` is a pipe-delimited list of the
+non-protein chemical classes (empty means protein-only):
+
+```{r substrate-cols}
+table(
+  acts_on_protein    = k$acts_on_protein,
+  acts_on_nonprotein = k$acts_on_nonprotein
+)
 ```
 
-The unified summary spans both classes; recover class-specific taxonomy with a
-class-routed join back to a master:
+The unified summary spans both classes, one row per gene, with
+`regulator_class` distinguishing them. It carries only the shared
+substrate/evidence columns; recover class-specific taxonomy with a class-routed
+join (shown below).
 
 ```{r unified}
 pe <- get_phosphoenzymes()
-table(pe$regulator_class, pe$acts_on_protein)
+table(pe$regulator_class)
 ```
 
-# The evidence model
+# Rigor and substrate are orthogonal
 
-`n_evidence_dimensions` (0-2) counts distinct evidence **classes**:
+The two axes are deliberately decoupled. `evidence_tier` answers *"how sure are
+we this gene is a catalytically real kinase/phosphatase?"* It is **substrate
+blind**: it never asks what the enzyme acts on. The substrate columns answer a
+separate question entirely.
+
+`n_evidence_dimensions` (0--2) counts distinct evidence **classes**:
 
 1. **Structural / evolutionary catalog** -- membership in an expert
    sequence-family catalog (`in_structural_catalog`).
-2. **Biochemical** -- a protein-specific 4-digit EC (`is_protein_kinase_ec`,
-   EC 2.7.10-2.7.14 for kinases).
+2. **Biochemical** -- a class-specific four-digit EC number
+   (protein kinase EC 2.7.10--2.7.14, or protein phosphatase EC).
 
-Because the catalogs all answer the same fold question from overlapping
-scholarship, they roll up into a single axis; GO and the reviewed UniProt keyword
-are supplementary support, not counted axes.
+These two axes map to a practical tier:
 
-`evidence_tier` is a practical prioritization heuristic over those two axes plus
-supplementary support:
+| tier        | condition                                              |
+|-------------|--------------------------------------------------------|
+| Gold        | both axes (structure **and** biochemistry)             |
+| Silver      | one axis **and** supplementary GO or reviewed keyword  |
+| Bronze      | one axis, no supplementary support                     |
+| Provisional | zero axes                                              |
 
-| tier | condition |
-|------|-----------|
-| Gold | both axes (structure **and** biochemistry) |
-| Silver | one axis **and** supplementary support (experimental GO or reviewed keyword) |
-| Bronze | one axis, no supplementary support |
-| Provisional | zero axes |
+`curated_core` (used by `mode = "strict"`) is simply
+`n_evidence_dimensions >= 1`.
 
-Because Gold requires the biochemical axis, it is common among well-characterized
-kinases but will be rarer among phosphatases, whose protein-specific EC coverage
-is far thinner -- a real feature of the underlying data, not a scoring artifact.
+Two kinds of *supplementary support* can lift a one-axis gene from Bronze to
+Silver. One is an experimental-evidence GO annotation for the catalytic
+activity. The other is a **reviewed UniProt keyword** -- a controlled-vocabulary
+term that UniProt's expert curators attach to a manually reviewed
+(Swiss-Prot) entry; here it is the family marker a curator assigns to the enzyme
+(`KW-0418`, *Kinase*, for kinases; `KW-0904`, *Protein phosphatase*, for
+phosphatases). Supplementary support is deliberately *not* one of the two rigor
+axes -- it only breaks the Bronze/Silver tie within a single axis, never
+manufacturing a second one.
 
-```{r tier-table}
-table(k$evidence_tier)
+Because rigor and substrate are orthogonal, the cross-product is populated in
+every cell that the biology allows: there are **Gold-tier enzymes that act on
+lipids**, not only on proteins. The tabulation below makes the independence
+concrete -- read it as "tier (rows) does not determine substrate (columns)":
+
+```{r orthogonal}
+with(p, table(evidence_tier = evidence_tier, substrate = substrate_call))
+```
+
+# A dual enzyme, end to end: PTEN
+
+PTEN is the canonical worked example of why the two axes must stay separate. It
+is a **Gold-tier** phosphatase (both evidence axes present) that acts on
+**both** a protein substrate and a lipid (PIP3). A pipeline that let fold or
+family override substrate would collapse PTEN to a single label and lose half
+of its biology. Here it is in one row, straight from the shipped table:
+
+```{r pten-trace}
+pten <- subset(
+  get_phosphatases(),
+  symbol == "PTEN",
+  select = c(
+    symbol, evidence_tier, n_evidence_dimensions,
+    acts_on_protein, acts_on_nonprotein,
+    substrate_call, nonprotein_substrate_type
+  )
+)
+as.data.frame(pten)
+```
+
+`acts_on_protein` is `TRUE`, `acts_on_nonprotein` is `TRUE`, `substrate_call` is
+`dual`, and `nonprotein_substrate_type` records the `lipid` substrate -- all
+while `evidence_tier` is `Gold`. Tier (rigor) and substrate are reported
+independently, exactly as intended.
+
+Every substrate call is auditable. Three provenance columns record *how* the
+call was reached -- the evidence that fired, the deciding source, and whether
+the available evidence agreed:
+
+```{r pten-provenance}
+as.data.frame(subset(
+  get_phosphatases(),
+  symbol == "PTEN",
+  select = c(substrate_evidence, substrate_decider, substrate_concordance)
+))
+```
+
+# Two knobs: `mode` and `substrate`
+
+`get_kinases()` and `get_phosphatases()` take two orthogonal filters that mirror
+the two axes:
+
+- `mode` filters **rigor**: `"comprehensive"` (default; the full membership
+  union) or `"strict"` (`curated_core`, i.e. at least one evidence dimension).
+- `substrate` filters **what the enzyme acts on**: `"any"` (default),
+  `"protein"`, or `"nonprotein"`. A dual enzyme satisfies both `"protein"` and
+  `"nonprotein"`.
+
+The two knobs never couple. `mode = "strict"` is **not** a protein filter: a
+strictly-curated lipid kinase is kept unless you *also* ask for
+`substrate = "protein"`. Any cell of the cross-product is reachable:
+
+```{r two-knob}
+nrow(get_kinases()) # comprehensive, any
+nrow(get_kinases(mode = "strict")) # >= 1 evidence dim
+nrow(get_kinases(mode = "strict", substrate = "protein")) # strict + protein
+```
+
+# Term sets as data
+
+The EC and GO rules that drive substrate typing are not buried in code -- they
+ship as four declarative CSVs (kinase/phosphatase x EC/GO), readable with
+`get_term_set()`:
+
+```{r term-sets}
+kinase_go <- get_term_set("kinase", "go")
+head(kinase_go[, c("term_id", "substrate", "substrate_subtype", "role")])
+```
+
+Each row is a cited rule: a term id, the substrate class it implies, and whether
+it contributes to rigor, to substrate typing, or both. Before feeding a
+hand-edited rule table back in, lint it with `validate_term_set()`, which
+returns one row per issue (empty when clean):
+
+```{r validate}
+issues <- validate_term_set() # validates the four shipped defaults
+nrow(issues) # 0 -> the shipped set is clean
+```
+
+## Re-typing under a custom term set
+
+`get_kinases()` / `get_phosphatases()` accept a `term_sets =` argument: a named
+list of EC/GO rule tables (any subset; missing tables fall back to the shipped
+defaults). When supplied, the substrate, rigor, and provenance columns are
+**recomputed from each gene's raw per-gene evidence** before the `mode` /
+`substrate` filters apply -- so you can re-type the catalog under your own rules
+**without rebuilding the package**.
+
+This recompute is **GMT-free**: it does not need the (unshipped) gene-set file.
+It works against a per-gene evidence sidecar that ships in the package
+(`substrate_evidence.csv`), intersecting each gene's recorded GO terms and EC
+codes against the term-set accessions you supply.
+
+Passing the *default* term set reproduces the shipped table exactly -- a
+round-trip identity that is the contract anchoring every custom recompute:
+
+```{r round-trip}
+default_ts <- list(
+  kinase_ec = get_term_set("kinase", "ec"),
+  kinase_go = get_term_set("kinase", "go")
+)
+recomputed <- get_kinases(term_sets = default_ts)
+identical(
+  as.data.frame(recomputed)[, "substrate_call"],
+  as.data.frame(get_kinases())[, "substrate_call"]
+)
+```
+
+To explore an alternative typing, edit a copy of a term set and pass it back.
+For example, dropping the lipid-kinase GO rules would stop typing those genes as
+lipid kinases (their rigor is untouched -- again, the two axes are independent):
+
+```{r custom-typing}
+ts2 <- get_term_set("kinase", "go")
+ts2 <- ts2[ts2$substrate_subtype != "lipid" | is.na(ts2$substrate_subtype), ]
+retyped <- get_kinases(term_sets = list(kinase_go = ts2))
+c(
+  shipped_lipid = sum(grepl("lipid", get_kinases()$nonprotein_substrate_type)),
+  retyped_lipid = sum(grepl("lipid", retyped$nonprotein_substrate_type))
+)
+```
+
+The default accessor path uses only base R. The `term_sets =` recompute path is
+the *only* code that needs `dplyr`, `purrr`, `stringr`, and `readr`; these are
+`Suggests`, not hard dependencies, and are reached solely when you pass a custom
+term set.
+
+# Recovering class taxonomy from the unified summary
+
+`get_phosphoenzymes()` keeps only the shared columns, so class-specific taxonomy
+(kinase group/family, phosphatase fold/family) lives on the masters. Recover it
+with a **class-routed join**: split the summary by `regulator_class` and join
+each part back to the matching master on `ensembl_gene_id`.
+
+```{r class-routed-join}
+pe <- get_phosphoenzymes()
+
+kin_tax <- merge(
+  pe[pe$regulator_class == "kinase", c("ensembl_gene_id", "evidence_tier")],
+  get_kinases()[, c("ensembl_gene_id", "kinase_family")],
+  by = "ensembl_gene_id"
+)
+head(kin_tax, 3)
 ```
 
 # Session info

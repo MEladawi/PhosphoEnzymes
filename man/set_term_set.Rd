@@ -30,7 +30,7 @@ no error-severity issues, writes it as a CSV named \verb{<class>_<type>_terms.cs
 into \code{dir}. The returned path can later feed a reclassification override.
 }
 \examples{
-\dontrun{
-set_term_set("kinase", "ec", get_term_set("kinase", "ec"))
+\donttest{
+set_term_set("kinase", "ec", get_term_set("kinase", "ec"), dir = tempdir())
 }
 }

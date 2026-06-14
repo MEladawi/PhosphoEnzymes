@@ -15,10 +15,14 @@ Description: A reproducible reference resource for the human phosphorylation
     Each gene carries a rigor metric counting distinct evidence classes
     (structural/evolutionary catalog and protein-specific EC) and a practical
     evidence_tier. Built tables ship as package data; the deterministic
-    regeneration pipeline lives in inst/scripts. Package code is released under
-    the MIT license; the bundled data tables are released under CC BY 4.0, with
-    per-source licenses and attribution recorded in inst/extdata/SOURCES.tsv.
-    See the vignette for usage.
+    regeneration pipeline lives in inst/scripts. The accessor and term-set
+    reader functions use only base R; the optional path that recomputes
+    substrate calls under a user-supplied term set draws on dplyr, purrr,
+    stringr, and readr, which are therefore Suggests rather than hard
+    dependencies. Package code is released under the MIT license; the bundled
+    data tables are released under CC BY 4.0, with per-source licenses and
+    attribution recorded in inst/extdata/SOURCES.tsv. See the vignette for
+    usage.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:

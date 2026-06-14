@@ -154,8 +154,8 @@ get_term_set <- function(class = c("kinase", "phosphatase"),
 #'   `tools::R_user_dir("PhosphoEnzymes", "data")`.
 #' @return The written file path, invisibly.
 #' @examples
-#' \dontrun{
-#' set_term_set("kinase", "ec", get_term_set("kinase", "ec"))
+#' \donttest{
+#' set_term_set("kinase", "ec", get_term_set("kinase", "ec"), dir = tempdir())
 #' }
 #' @export
 set_term_set <- function(class = c("kinase", "phosphatase"),

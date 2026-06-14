@@ -18,6 +18,32 @@
 * New `regulates` / `regulatory_role` columns on the phosphatase master record
   the adapter/activator relationships of the inactive myotubularins in place,
   rather than relocating them out of the catalytic phosphatome.
+* `get_kinases()` and `get_phosphatases()` gain a two-knob filter API: `mode`
+  (`"comprehensive"` / `"strict"`) selects on rigor (`curated_core`) and
+  `substrate` (`"any"` / `"protein"` / `"nonprotein"`) selects on what the
+  enzyme acts on. The knobs are orthogonal, so a strictly-curated lipid kinase
+  survives `mode = "strict"` unless `substrate = "protein"` is also requested.
+* The EC/GO rules that drive substrate typing are now externalized as data:
+  four declarative term-set CSVs (kinase/phosphatase x EC/GO) ship in the
+  package, readable with `get_term_set()` and lintable with
+  `validate_term_set()`.
+* `get_kinases()` / `get_phosphatases()` accept a `term_sets =` override that
+  re-types the shipped catalog under a user-supplied EC/GO term set without a
+  rebuild. The recompute is gene-set-file-free -- it reads each gene's recorded
+  evidence from a shipped sidecar -- and the default term set reproduces the
+  shipped table exactly (round-trip identity). This path is the only one that
+  uses `dplyr` / `purrr` / `stringr` / `readr`, which remain `Suggests`.
+* New substrate-provenance columns (`substrate_evidence`, `substrate_decider`,
+  `substrate_concordance`) make every substrate call auditable, and a per-gene
+  `substrate_evidence.csv` sidecar ships the term-set-independent evidence that
+  powers the `term_sets =` recompute.
+* Two enrichment-background columns (`is_catalytic_background`,
+  `is_protein_catalytic_background`) define the catalytic and protein-catalytic
+  universes for downstream over-representation testing.
+* The build manifest now stamps the md5 fingerprint of each shipped term-set
+  CSV, and the consolidated QC step re-verifies the on-disk term sets against
+  those recorded fingerprints, so a term set cannot drift from its provenance
+  unnoticed.
 
 # PhosphoEnzymes 0.99.0
 

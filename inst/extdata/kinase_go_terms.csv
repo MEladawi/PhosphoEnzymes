@@ -17,7 +17,7 @@ GO:0008481,kinase,nonprotein,lipid,rigor+substrate,exact,AmiGO,sphingosine kinas
 GO:0019200,kinase,nonprotein,carbohydrate,rigor+substrate,subtree,AmiGO,carbohydrate kinase activity (hexokinase GO:0004396)
 GO:0019205,kinase,nonprotein,nucleotide,rigor+substrate,subtree,AmiGO,nucleobase-containing compound kinase (adenylate GO:0004017; NDP GO:0004550)
 GO:0004111,kinase,nonprotein,metabolite,rigor+substrate,exact,AmiGO; xref EC 2.7.3.2,creatine kinase activity
-GO:0016597,kinase,nonprotein,metabolite,rigor+substrate,exact,AmiGO,amino acid kinase activity (free amino acids); the metabolic term mis-assigned to protein-Arg kinase by agent 2
+GO:0016597,kinase,nonprotein,metabolite,rigor+substrate,exact,AmiGO,"amino acid kinase activity (free amino acids); a metabolic term, not the protein-Arg kinase activity (GO:1990424) it is sometimes conflated with"
 GO:0016301,kinase,na,,rigor_umbrella,subtree,AmiGO,"kinase activity (broad); membership/typing only, never a substrate vote"
 GO:0016773,kinase,na,,rigor_umbrella,exact,AmiGO,"phosphotransferase, alcohol group as acceptor (intermediate)"
 GO:0016775,kinase,na,,rigor_umbrella,exact,AmiGO,"phosphotransferase, nitrogenous group as acceptor (creatine/arginine-kinase parent)"
