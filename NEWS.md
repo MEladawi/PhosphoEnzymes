@@ -12,6 +12,12 @@
   hard-errors on a pinned denylist of confirmed-obsolete GO ids, and the build
   re-verifies every GO id's obsolescence against the live ontology on a source
   refresh so the denylist cannot silently go stale (soft-depends on jsonlite).
+* The obsolete term `GO:0035004` (retired as an unnecessary grouping class for
+  "phosphatidylinositol 3-kinase activity") was removed from the kinase GO term
+  set and added to the obsolete-GO denylist. PI3K lipid coverage is unchanged:
+  it is retained by `GO:0001727` (lipid kinase activity, subtree) and
+  `GO:0016303` (1-PI 3-kinase activity, exact), so no gene's membership or typing
+  moved.
 * The myotubularin family invariant is refined to catalytically active members;
   the family pseudophosphatases (`MTMR9`/`MTMR10`/`MTMR11`/`MTMR12`,
   `SBF1`/`SBF2`) are not lipid-typed.

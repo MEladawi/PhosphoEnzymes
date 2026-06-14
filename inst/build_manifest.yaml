@@ -4,59 +4,60 @@ tables:
   human_kinases:
     n_rows: 756
     n_cols: 55
-    md5: 911bb9abd84ef4297f62a1a2dfd01258
+    md5: 282e436154cb2290ddd6657367595cc8
   human_phosphatases:
     n_rows: 298
     n_cols: 53
-    md5: f24a9fc982b821025d6842e6d5a41e17
+    md5: 9a950704704192907d9d85925f3917bc
   human_phosphoenzymes:
     n_rows: 1054
     n_cols: 15
-    md5: da183a65f5fc41dd50f592e106d8b729
+    md5: 17a0da008a55b609eb6c893d9b01578b
 sources:
 - source: HGNC complete set (identifier bridge)
   file: hgnc_complete_set.txt
-  version: 'HGNC monthly | archive: archive URL not recorded | file dated 2026-06-13'
-  fetched: '2026-06-13'
+  version: 'HGNC monthly | archive: https://storage.googleapis.com/download/storage/v1/b/public-download-files/o/hgnc%2Farchive%2Farchive%2Fmonthly%2Ftsv%2Fhgnc_complete_set_2026-06-05.txt?generation=1780905975280959&alt=media
+    | file dated 2026-06-14'
+  fetched: '2026-06-14'
 - source: UniProt pkinfam (curated protein kinome)
   file: pkinfam.txt
   version: 2026_01 of 28-Jan-2026
-  fetched: '2026-06-13'
+  fetched: '2026-06-14'
 - source: GO molecular-function gene sets (Bader Lab EM_Genesets, Ensembl-keyed)
   file: go_mf_genesets_with_iea_ensembl.gmt
   version: Bader Lab EM_Genesets current_release, IEA-inclusive (electronic annotations
-    included), fetched 2026-06-13
-  fetched: '2026-06-13'
+    included), fetched 2026-06-14
+  fetched: '2026-06-14'
 - source: Manning kinome (kinase.com)
   file: kinase.com_manning_list.xls
-  version: Manning et al. 2002 (static), fetched 2026-06-13
-  fetched: '2026-06-13'
+  version: Manning et al. 2002 (static), fetched 2026-06-14
+  fetched: '2026-06-14'
 - source: KinHub human kinase list (reconstructed facts)
   file: kinhub_facts.tsv
   version: kinhub.org (Eid et al. 2017), reconstructed membership facts dated 2026-06-13
   fetched: '2026-06-13'
 - source: UniProtKB reviewed human, keyword KW-0418 (Kinase)
   file: uniprot_kinase_KW-0418_human.tsv
-  version: UniProtKB reviewed, fetched 2026-06-13
-  fetched: '2026-06-13'
+  version: UniProtKB reviewed, fetched 2026-06-14
+  fetched: '2026-06-14'
 - source: IDG understudied (dark) kinome
   file: IDG_dark_kinase_list.csv
-  version: IDG DarkKinaseTools, fetched 2026-06-13
-  fetched: '2026-06-13'
+  version: IDG DarkKinaseTools, fetched 2026-06-14
+  fetched: '2026-06-14'
 - source: Curated human pseudokinases (catalytic_status source)
   file: pseudokinases.csv
-  version: curated pseudokinome list dated 2026-06-13
-  fetched: '2026-06-13'
+  version: curated pseudokinome list dated 2026-06-14
+  fetched: '2026-06-14'
 - source: Chen 2017 human phosphatome (reconstructed facts)
   file: chen_phosphatome_facts.tsv
-  version: Chen/Dixon/Manning 2017, reconstructed facts dated 2026-06-13
-  fetched: '2026-06-13'
+  version: Chen/Dixon/Manning 2017, reconstructed facts dated 2026-06-14
+  fetched: '2026-06-14'
 - source: UniProtKB reviewed human, keyword KW-0904 (Protein phosphatase)
   file: uniprot_phosphatase_KW-0904_human.tsv
-  version: UniProtKB reviewed KW-0904, fetched 2026-06-13
-  fetched: '2026-06-13'
+  version: UniProtKB reviewed KW-0904, fetched 2026-06-14
+  fetched: '2026-06-14'
 term_sets:
   kinase_ec: d928997e87ec9a33fc3c8f8be48c49e7
-  kinase_go: d582d0c0738a7b4719f91d4bda8c52cf
+  kinase_go: 5128b14f865a321d02999e542b886386
   phosphatase_ec: 90f3689c5cc3dc93badc1484b69f087e
   phosphatase_go: c0976c3f4cd24d6eb40993fafc0b8e92

@@ -10,7 +10,6 @@ GO:0097472,kinase,protein,,rigor+substrate,exact,AmiGO; xref EC 2.7.11.22,cyclin
 GO:0035173,kinase,protein,,rigor+substrate,exact,AmiGO,histone kinase activity
 GO:0001727,kinase,nonprotein,lipid,rigor+substrate,subtree,AmiGO,lipid kinase activity (under GO:0016301)
 GO:0004430,kinase,nonprotein,lipid,rigor+substrate,exact,AmiGO; xref EC 2.7.1.67,1-PI 4-kinase activity
-GO:0035004,kinase,nonprotein,lipid,rigor+substrate,exact,AmiGO,PI 3-kinase activity
 GO:0016303,kinase,nonprotein,lipid,rigor+substrate,exact,AmiGO,1-PI 3-kinase activity
 GO:0004143,kinase,nonprotein,lipid,rigor+substrate,exact,AmiGO,diacylglycerol kinase activity
 GO:0008481,kinase,nonprotein,lipid,rigor+substrate,exact,AmiGO,sphingosine kinase activity

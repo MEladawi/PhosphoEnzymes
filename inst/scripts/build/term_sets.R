@@ -133,7 +133,11 @@ TERM_SET_REVERSE_CANARIES <- list(
 # validator hard-errors on any of these (distinct from a valid-but-unannotated term, which only
 # warns). Extend only with IDs confirmed obsolete against the pinned release, never on a hunch.
 TERM_SET_OBSOLETE_GO <- c(
-  "GO:0004437"  # obsolete "inositol or phosphatidylinositol phosphatase activity"; no successor
+  "GO:0004437",  # obsolete "inositol or phosphatidylinositol phosphatase activity"; no successor
+  "GO:0035004"   # obsolete "phosphatidylinositol 3-kinase activity"; retired as an unnecessary
+                 # grouping class. PI3K lipid coverage is retained by GO:0001727 (lipid kinase,
+                 # subtree) and GO:0016303 (1-PI 3-kinase, exact), so the term was removed, not
+                 # replaced -- membership is unchanged.
 )
 
 # Re-verify every GO term_id against the live ontology (QuickGO). The pinned TERM_SET_OBSOLETE_GO
