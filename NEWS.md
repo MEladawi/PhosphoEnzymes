@@ -1,3 +1,35 @@
+# PhosphoEnzymes 1.0.0
+
+First stable release. This release marks the substrate-aware reference complete
+across both enzyme classes; the API, schema, gate, and reproducibility guarantees
+below are now stable. Archived on Zenodo (DOI 10.5281/zenodo.20732423).
+
+* Three tables ship as package data, each keyed on base Ensembl gene IDs with full
+  per-gene provenance: `human_kinases` (~756 x 55, `get_kinases()`),
+  `human_phosphatases` (~298 x 53, protein and non-protein; ~181 protein-acting,
+  `get_phosphatases()`), and the class-agnostic `human_phosphoenzymes`
+  (~1054 x 15, `get_phosphoenzymes()`).
+* Two-axis classification is the core model. Rigor (`n_evidence_dimensions` ->
+  `evidence_tier`) and substrate (`acts_on_protein` / `acts_on_nonprotein` ->
+  `substrate_call`) are independent: sequence-family membership scores lineage but
+  never overrides substrate (the PI3K / PTEN principle), so a catalog-confirmed gene
+  with no substrate signal stays `untyped` rather than being forced to protein, and
+  bifunctional enzymes (PTEN, PIK3CA) survive as a single `dual` row.
+* Accessor API is stable: the orthogonal `mode` / `substrate` knobs on
+  `get_kinases()` / `get_phosphatases()`, the `term_sets =` reclassification
+  override, and `get_term_set()` / `validate_term_set()` / `set_term_set()` /
+  `provenance()`. Default accessor paths use base R only; the `term_sets =`
+  recompute is the sole path drawing on the `Suggests` tidyverse packages.
+* The EC/GO typing rules ship as four cited, lintable term-set CSVs; obsolete GO
+  ids are hard-errored against a pinned denylist re-verified against the live
+  ontology on a source refresh.
+* Reproducibility: tables regenerate offline from pinned, dated source snapshots
+  through a QC gate; the build manifest stamps each table and term-set md5, and a
+  weekly source-refresh bot opens a PR only when table content actually changes.
+  Every release is a pinned, citable snapshot -- there is no user-side live refresh.
+* Licensing: package code under MIT, bundled data tables under CC BY 4.0, with
+  per-source attribution in `inst/extdata/SOURCES.tsv`.
+
 # PhosphoEnzymes 0.99.1
 
 * Phosphoinositide phosphatases are now lipid-typed through the
