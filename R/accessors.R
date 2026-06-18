@@ -108,8 +108,10 @@ provenance <- function(x) {
     manifest <- yaml::read_yaml(manifest_path)
     if (!is.null(manifest$sources)) {
       out$releases <- stats::setNames(
-        vapply(manifest$sources, function(s) as.character(s$version %||% NA_character_), character(1)),
-        vapply(manifest$sources, function(s) as.character(s$source %||% NA_character_), character(1)))
+        vapply(manifest$sources,
+               function(s) as.character(s$version %||% NA_character_), character(1)),
+        vapply(manifest$sources,
+               function(s) as.character(s$source %||% NA_character_), character(1)))
     }
   }
   out
@@ -175,6 +177,13 @@ set_term_set <- function(class = c("kinase", "phosphatase"),
   invisible(path)
 }
 
+# Runtime copy of the build-side TERM_SET_OBSOLETE_GO (inst/scripts/build/term_sets.R);
+# the two MUST stay in sync. GO term_ids verified obsolete in the pinned ontology
+# (QuickGO isObsolete == true) resolve to an empty gene set, so they must never sit in a
+# term set; validate_term_set() hard-errors on any of these (distinct from a valid-but-
+# unannotated term). Extend only with IDs confirmed obsolete against the pinned release.
+.pe_obsolete_go <- c("GO:0004437", "GO:0035004")
+
 #' Structurally validate one or more term-set tables
 #'
 #' Mirrors the build-side structural checks (a subset -- no gene-set resolution
@@ -226,12 +235,11 @@ validate_term_set <- function(term_sets = NULL) {
     # Umbrella rows must be substrate-agnostic.
     bad_umb <- tbl$term_id[tbl$role == "rigor_umbrella" & tbl$substrate != "na"]
     for (t in bad_umb) add("error", nm, t, "umbrella row must have substrate == na")
-    # GO term_ids verified obsolete in the pinned ontology (QuickGO isObsolete == true). A retired
-    # term resolves to an empty gene set, so it must never sit in a term set: hard error here,
-    # distinct from a valid-but-unannotated term. Extend only with confirmed-obsolete IDs.
-    obsolete_go <- c("GO:0004437", "GO:0035004")
-    for (t in intersect(tbl$term_id, obsolete_go))
-      add("error", nm, t, "obsolete GO term_id (retired in the ontology; remove or replace with its successor)")
+    # Obsolete GO ids resolve to empty gene sets; hard error (see .pe_obsolete_go).
+    for (t in intersect(tbl$term_id, .pe_obsolete_go))
+      add("error", nm, t, paste(
+        "obsolete GO term_id (retired in the ontology;",
+        "remove or replace with its successor)"))
     # No term_id may carry both protein and nonprotein among rigor+substrate rows.
     rig <- tbl[is_rig, , drop = FALSE]
     if (nrow(rig)) {
@@ -276,7 +284,8 @@ validate_term_set <- function(term_sets = NULL) {
   if (is.null(names(term_sets)) || !all(names(term_sets) %in% keys)) {
     stop("term_sets must be a named list with names among: ",
          paste(keys, collapse = ", "),
-         " (e.g. list(kinase_ec = ..., kinase_go = ..., phosphatase_ec = ..., phosphatase_go = ...))")
+         " (e.g. list(kinase_ec = ..., kinase_go = ...,",
+         " phosphatase_ec = ..., phosphatase_go = ...))")
   }
   # Replace whole tables (never merge column-wise): a supplied table wins, the rest stay default.
   for (k in intersect(names(term_sets), keys)) defaults[[k]] <- term_sets[[k]]
@@ -307,7 +316,8 @@ validate_term_set <- function(term_sets = NULL) {
   err <- issues[issues$severity == "error", , drop = FALSE]
   if (nrow(err)) {
     warning("supplied term_sets has ", nrow(err), " validation error(s); proceeding anyway:\n",
-            paste0("  - [", err$table, "] ", ifelse(is.na(err$term_id), "", paste0(err$term_id, ": ")),
+            paste0("  - [", err$table, "] ",
+                   ifelse(is.na(err$term_id), "", paste0(err$term_id, ": ")),
                    err$message, collapse = "\n"), call. = FALSE)
   }
 
@@ -362,8 +372,12 @@ validate_term_set <- function(term_sets = NULL) {
 
   master <- .pe_load(dataset)
   keep_attr <- attr(master, "term_set_md5")
-  master_kept <- master[, setdiff(names(master), setdiff(recomputed_cols, "ensembl_gene_id")), drop = FALSE]
-  recompute_join <- recomputed[, intersect(c("ensembl_gene_id", recomputed_cols), names(recomputed)), drop = FALSE]
+  master_kept <- master[
+    , setdiff(names(master), setdiff(recomputed_cols, "ensembl_gene_id")),
+    drop = FALSE]
+  recompute_join <- recomputed[
+    , intersect(c("ensembl_gene_id", recomputed_cols), names(recomputed)),
+    drop = FALSE]
 
   out <- dplyr::left_join(master_kept, recompute_join, by = dplyr::join_by(ensembl_gene_id))
   out <- out[, names(master), drop = FALSE]   # restore the shipped column order
@@ -382,7 +396,3 @@ validate_term_set <- function(term_sets = NULL) {
   if (!is.null(keep_attr)) attr(out, "term_set_md5") <- keep_attr
   out
 }
-
-#' @keywords internal
-#' @noRd
-`%||%` <- function(a, b) if (is.null(a)) b else a

@@ -1,6 +1,6 @@
 Package: PhosphoEnzymes
 Title: A Reproducible, Substrate-Aware Reference of Human Kinases and Phosphatases
-Version: 1.0.0
+Version: 1.0.1
 Authors@R:
     person(given = "Mahmoud", family = "Eladawi",
            role = c("aut", "cre"),

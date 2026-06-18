@@ -15,8 +15,11 @@
 #'   \item{nonprotein_substrate_type}{Pipe-delimited non-protein substrate classes
 #'     ("lipid", "nucleotide", "carbohydrate", "metabolite", "other"); empty for
 #'     protein-only.}
-#'   \item{substrate_subtype}{Finer-grained substrate label (e.g.
-#'     "Inositol-phosphate kinase", "Creatine kinase").}
+#'   \item{substrate_subtype}{Coarse substrate-type bucket derived from
+#'     `substrate_call` and `nonprotein_substrate_type`: one of "Protein kinase",
+#'     "Lipid kinase", "Carbohydrate/sugar kinase", "Nucleotide/nucleoside kinase",
+#'     "Metabolite kinase", "Other small-molecule kinase", or "Unclassified kinase".
+#'     For the finer non-protein class see `nonprotein_substrate_type`.}
 #'   \item{substrate_call}{One of "protein" / "nonprotein" / "dual" / "untyped" --
 #'     the collapsed substrate verdict derived from `acts_on_protein` /
 #'     `acts_on_nonprotein`.}
@@ -54,8 +57,11 @@
 #'     `mode = "strict"` knob, which never touches the substrate booleans.}
 #'   \item{in_structural_catalog}{Logical. Axis 1: Manning / KinHub / kinase.com /
 #'     pkinfam.}
-#'   \item{is_protein_kinase_ec}{Logical. Axis 2: a protein-specific EC
-#'     (2.7.10-2.7.14).}
+#'   \item{is_protein_kinase_ec}{Logical. A protein-specific kinase EC
+#'     (2.7.10-2.7.14) fired. The protein-only EC flag -- narrower than the EC rigor
+#'     dimension counted in `n_evidence_dimensions`, which credits any class kinase EC
+#'     (protein or small-molecule), so the two diverge for non-protein and dual EC
+#'     kinases such as PIK3CA.}
 #'   \item{membership_basis}{Deriving source of the Axis-1 (structural-catalog) call:
 #'     "reconstructed:pkinfam" (cleanly-licensed anchor), "reconstructed:kinase.com",
 #'     or "crosscheck:KinHub"; NA when the gene is in no structural catalog.}
@@ -117,7 +123,11 @@
 #'     PTEN is TRUE for both); filtered orthogonally by the `substrate` accessor knob.}
 #'   \item{nonprotein_substrate_type}{Pipe-delimited non-protein classes ("lipid", "nucleotide",
 #'     "carbohydrate", "metabolite", "other"); empty for protein-only.}
-#'   \item{substrate_subtype}{Finer-grained substrate label (e.g. "Lipid phosphatase").}
+#'   \item{substrate_subtype}{Coarse substrate-type bucket derived from
+#'     `substrate_call` and `nonprotein_substrate_type`: one of "Protein phosphatase",
+#'     "Lipid phosphatase", "Nucleotide phosphatase", "Carbohydrate/sugar phosphatase",
+#'     "Other small-molecule phosphatase", or "Unclassified phosphatase". For the finer
+#'     non-protein class see `nonprotein_substrate_type`.}
 #'   \item{substrate_call}{One of "protein" / "nonprotein" / "dual" / "untyped" -- the collapsed
 #'     substrate verdict from `acts_on_protein` / `acts_on_nonprotein`.}
 #'   \item{substrate_evidence}{Which evidence kinds drove the substrate call, joined with "+":
@@ -151,7 +161,10 @@
 #'     `mode = "strict"` knob, which never touches the substrate booleans.}
 #'   \item{in_structural_catalog}{Logical. Axis 1: Chen 2017 phosphatome or an HGNC
 #'     protein-phosphatase gene group.}
-#'   \item{is_protein_phosphatase_ec}{Logical. Axis 2: EC 3.1.3.16 (Ser/Thr) or 3.1.3.48 (Tyr).}
+#'   \item{is_protein_phosphatase_ec}{Logical. A protein-specific phosphatase EC
+#'     (3.1.3.16 Ser/Thr or 3.1.3.48 Tyr) fired. The protein-only EC flag -- narrower
+#'     than the EC rigor dimension counted in `n_evidence_dimensions`, which credits any
+#'     class phosphatase EC, so the two diverge for non-protein and dual EC phosphatases.}
 #'   \item{go_experimental}{Logical. Non-electronic GO phosphatase-activity support.}
 #'   \item{has_uniprot_kw}{Logical. Reviewed Swiss-Prot keyword KW-0904 present.}
 #'   \item{supplementary_support}{Logical. `go_experimental` OR `has_uniprot_kw`.}

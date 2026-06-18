@@ -14,7 +14,11 @@ A data frame with one row per gene and the following columns:
 PTEN is TRUE for both); filtered orthogonally by the \code{substrate} accessor knob.}
 \item{nonprotein_substrate_type}{Pipe-delimited non-protein classes ("lipid", "nucleotide",
 "carbohydrate", "metabolite", "other"); empty for protein-only.}
-\item{substrate_subtype}{Finer-grained substrate label (e.g. "Lipid phosphatase").}
+\item{substrate_subtype}{Coarse substrate-type bucket derived from
+\code{substrate_call} and \code{nonprotein_substrate_type}: one of "Protein phosphatase",
+"Lipid phosphatase", "Nucleotide phosphatase", "Carbohydrate/sugar phosphatase",
+"Other small-molecule phosphatase", or "Unclassified phosphatase". For the finer
+non-protein class see \code{nonprotein_substrate_type}.}
 \item{substrate_call}{One of "protein" / "nonprotein" / "dual" / "untyped" -- the collapsed
 substrate verdict from \code{acts_on_protein} / \code{acts_on_nonprotein}.}
 \item{substrate_evidence}{Which evidence kinds drove the substrate call, joined with "+":
@@ -48,7 +52,10 @@ evidence classes plus supplementary support.}
 \code{mode = "strict"} knob, which never touches the substrate booleans.}
 \item{in_structural_catalog}{Logical. Axis 1: Chen 2017 phosphatome or an HGNC
 protein-phosphatase gene group.}
-\item{is_protein_phosphatase_ec}{Logical. Axis 2: EC 3.1.3.16 (Ser/Thr) or 3.1.3.48 (Tyr).}
+\item{is_protein_phosphatase_ec}{Logical. A protein-specific phosphatase EC
+(3.1.3.16 Ser/Thr or 3.1.3.48 Tyr) fired. The protein-only EC flag -- narrower
+than the EC rigor dimension counted in \code{n_evidence_dimensions}, which credits any
+class phosphatase EC, so the two diverge for non-protein and dual EC phosphatases.}
 \item{go_experimental}{Logical. Non-electronic GO phosphatase-activity support.}
 \item{has_uniprot_kw}{Logical. Reviewed Swiss-Prot keyword KW-0904 present.}
 \item{supplementary_support}{Logical. \code{go_experimental} OR \code{has_uniprot_kw}.}

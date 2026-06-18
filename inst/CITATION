@@ -5,7 +5,7 @@ bibentry(
   title    = "PhosphoEnzymes: a reproducible reference of human kinases and phosphatases",
   author   = person("Mahmoud", "Eladawi"),
   year     = "2026",
-  note     = "R package version 1.0.0",
+  note     = "R package version 1.0.1",
   doi      = "10.5281/zenodo.20732423",
   url      = "https://github.com/MEladawi/PhosphoEnzymes"
 )

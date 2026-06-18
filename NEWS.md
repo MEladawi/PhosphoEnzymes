@@ -1,3 +1,24 @@
+# PhosphoEnzymes 1.0.1
+
+Patch release: documentation accuracy and internal cleanups. The shipped data,
+the table schema, and the accessor API are unchanged -- the `data/*.rda` tables
+are byte-identical to 1.0.0.
+
+* Corrected the `substrate_subtype` column description in `?human_kinases` and
+  `?human_phosphatases`. The column carries the coarse substrate-type bucket
+  (e.g. "Protein kinase", "Lipid kinase"), not a finer-grained label; the finer
+  non-protein class lives in `nonprotein_substrate_type`. The examples previously
+  shown did not occur among the column's values.
+* Corrected the `is_protein_kinase_ec` / `is_protein_phosphatase_ec` column
+  descriptions. These are the protein-only EC flags and are narrower than the EC
+  rigor dimension counted in `n_evidence_dimensions`, which credits any class EC
+  (protein or small-molecule). The two diverge for non-protein and dual EC
+  enzymes (e.g. PIK3CA), so the previous "Axis 2" wording could mislead a reader
+  reconstructing the rigor metric.
+* Internal only: the runtime obsolete-GO denylist is now a named constant kept in
+  sync with the build-side list; removed a redundant `%||%` definition now that
+  base R provides it; minor formatting. No user-visible behavior change.
+
 # PhosphoEnzymes 1.0.0
 
 First stable release. This release marks the substrate-aware reference complete

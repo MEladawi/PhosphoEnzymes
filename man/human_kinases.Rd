@@ -16,8 +16,11 @@ TRUE for both; the two are filtered orthogonally by the \code{substrate} accesso
 \item{nonprotein_substrate_type}{Pipe-delimited non-protein substrate classes
 ("lipid", "nucleotide", "carbohydrate", "metabolite", "other"); empty for
 protein-only.}
-\item{substrate_subtype}{Finer-grained substrate label (e.g.
-"Inositol-phosphate kinase", "Creatine kinase").}
+\item{substrate_subtype}{Coarse substrate-type bucket derived from
+\code{substrate_call} and \code{nonprotein_substrate_type}: one of "Protein kinase",
+"Lipid kinase", "Carbohydrate/sugar kinase", "Nucleotide/nucleoside kinase",
+"Metabolite kinase", "Other small-molecule kinase", or "Unclassified kinase".
+For the finer non-protein class see \code{nonprotein_substrate_type}.}
 \item{substrate_call}{One of "protein" / "nonprotein" / "dual" / "untyped" --
 the collapsed substrate verdict derived from \code{acts_on_protein} /
 \code{acts_on_nonprotein}.}
@@ -55,8 +58,11 @@ GO/UniProt-keyword support. Not a probability, not an evidence count.}
 \code{mode = "strict"} knob, which never touches the substrate booleans.}
 \item{in_structural_catalog}{Logical. Axis 1: Manning / KinHub / kinase.com /
 pkinfam.}
-\item{is_protein_kinase_ec}{Logical. Axis 2: a protein-specific EC
-(2.7.10-2.7.14).}
+\item{is_protein_kinase_ec}{Logical. A protein-specific kinase EC
+(2.7.10-2.7.14) fired. The protein-only EC flag -- narrower than the EC rigor
+dimension counted in \code{n_evidence_dimensions}, which credits any class kinase EC
+(protein or small-molecule), so the two diverge for non-protein and dual EC
+kinases such as PIK3CA.}
 \item{membership_basis}{Deriving source of the Axis-1 (structural-catalog) call:
 "reconstructed:pkinfam" (cleanly-licensed anchor), "reconstructed:kinase.com",
 or "crosscheck:KinHub"; NA when the gene is in no structural catalog.}
