@@ -196,7 +196,9 @@ Per-source license, version, URL, and attribution are recorded in `inst/extdata/
 
 ## Citing
 
-The software is archived on Zenodo under the release-independent DOI
-[10.5281/zenodo.20732423](https://doi.org/10.5281/zenodo.20732423), which always
-resolves to the latest version. See `CITATION.cff` for how to cite the software, and
-`inst/extdata/SOURCES.tsv` for the upstream data sources to cite alongside it.
+> Eladawi, M. (2026). *PhosphoEnzymes: a reproducible, substrate-aware reference of
+> human kinases and phosphatases.* Zenodo. https://doi.org/10.5281/zenodo.20732423
+
+The DOI is release-independent and always resolves to the latest version. When you
+publish results derived from the shipped tables, also cite the upstream data sources
+listed in `inst/extdata/SOURCES.tsv`.
