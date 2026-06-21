@@ -79,6 +79,40 @@ test_that("dropping a non-protein lipid GO rule reduces lipid calls for that cla
   expect_equal(p_mod$nonprotein_substrate_type, p_base$nonprotein_substrate_type)
 })
 
+test_that("a non-default GO accession warns instead of a silent no-op", {
+  skip_if_not_installed("dplyr")
+  skip_if_not_installed("purrr")
+  skip_if_not_installed("stringr")
+  skip_if_not_installed("readr")
+
+  # The GMT-free recompute resolves GO membership from each gene's `go_terms` in
+  # the sidecar, which records only the build's candidate accessions (the union
+  # of the default GO term tables). A GO accession a user ADDS beyond those
+  # defaults is absent from every gene's record and matches no gene -- even one
+  # genuinely annotated with it in the full ontology -- so it would silently
+  # under-call substrate. The accessor must instead warn, naming the bad id.
+  # GO:0004683 = Ca2+/calmodulin-dependent kinase activity (not a default term).
+  novel_go <- "GO:0004683"
+  ts <- default_term_sets()
+  expect_false(novel_go %in% ts$kinase_go$term_id)
+  ts$kinase_go <- dplyr::bind_rows(
+    ts$kinase_go,
+    dplyr::tibble(
+      term_id = novel_go, class = "kinase", substrate = "protein",
+      substrate_subtype = "", role = "rigor+substrate", scope = "exact",
+      citation = "AmiGO", note = "seeded non-default protein GO term"))
+
+  expect_warning(out <- PhosphoEnzymes::get_kinases(term_sets = ts), novel_go)
+  expect_s3_class(out, "data.frame")
+
+  # The clean default set must NOT trip the guard. A benign vroom read warning
+  # may still surface, so assert specifically that no guard warning is raised,
+  # not that there is none at all.
+  default_warnings <- testthat::capture_warnings(
+    PhosphoEnzymes::get_kinases(term_sets = default_term_sets()))
+  expect_false(any(grepl("silently inert", default_warnings)))
+})
+
 test_that("the default get_kinases() path runs and a term set with error rows warns, not stops", {
   # Default path: no term_sets=, must work regardless of the Suggests being reachable.
   expect_s3_class(PhosphoEnzymes::get_kinases(), "data.frame")
