@@ -294,6 +294,36 @@ validate_term_set <- function(term_sets = NULL) {
 
 #' @keywords internal
 #' @noRd
+# Loud guard for the GMT-free recompute's one blind spot. The shipped sidecar
+# records each gene's GO membership only among the build's candidate accessions
+# -- the union of the default GO term tables. A GO accession a user ADDS beyond
+# those defaults is absent from every gene's `go_terms` and can match no gene,
+# even one genuinely annotated with it in the full ontology, so a valid custom
+# GO rule would silently under-call substrate. Runtime re-curation can only
+# re-weight GO accessions already in the installed data; a genuinely new
+# accession needs a full data rebuild, not a recompute. Warn (never stop) and
+# name the offending ids. Anchoring on the default term_ids -- not on accessions
+# that happen to annotate a gene -- keeps the default round-trip warning-free.
+.pe_warn_unsupported_go <- function(go_tbl, class) {
+  default_go <- unique(c(get_term_set("kinase", "go")$term_id,
+                         get_term_set("phosphatase", "go")$term_id))
+  supplied <- unique(go_tbl$term_id[go_tbl$role == "rigor+substrate"])
+  unsupported <- setdiff(supplied, default_go)
+  if (length(unsupported)) {
+    warning(
+      "term_sets= ", class, "_go adds ", length(unsupported),
+      " rigor+substrate GO term(s) outside the shipped GO annotation ",
+      "universe; runtime re-curation can only act on GO accessions ",
+      "already annotated in the installed data, so these match no gene ",
+      "and are silently inert (supporting a new GO accession requires ",
+      "rebuilding the package data):\n",
+      paste0("  - ", unsupported, collapse = "\n"), call. = FALSE)
+  }
+  invisible(unsupported)
+}
+
+#' @keywords internal
+#' @noRd
 # Re-type the shipped master for one class under a user-supplied term set, then
 # apply mode/substrate. This is the ONLY path that touches the dplyr/purrr/
 # stringr/readr Suggests; it guards on them up front. The default (no term_sets=)
@@ -328,6 +358,7 @@ validate_term_set <- function(term_sets = NULL) {
   # to the build's id-set membership for any term set drawn from the shipped candidate accessions.
   go_tbl <- tibble::as_tibble(tables[[paste0(class, "_go")]])
   ec_tbl <- tibble::as_tibble(tables[[paste0(class, "_ec")]])
+  .pe_warn_unsupported_go(go_tbl, class)
   go_acc <- .pe_resolve_go_accessions_class(go_tbl)
   resolved_class <- .pe_resolve_ec_class(ec_tbl)
 
