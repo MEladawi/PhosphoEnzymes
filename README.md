@@ -1,5 +1,7 @@
 # PhosphoEnzymes
 
+[![R-CMD-check](https://github.com/MEladawi/PhosphoEnzymes/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/MEladawi/PhosphoEnzymes/actions/workflows/R-CMD-check.yaml)
+[![sources checked](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/MEladawi/PhosphoEnzymes/badges/refresh-status.json)](https://github.com/MEladawi/PhosphoEnzymes/actions/workflows/refresh-sources.yaml)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20732423-1682D4?logo=zenodo)](https://doi.org/10.5281/zenodo.20732423)
 
 **A reproducible, substrate-aware reference of the human phosphorylation machinery — kinases and phosphatases — keyed on base Ensembl gene IDs and typed by what each enzyme acts on.**
