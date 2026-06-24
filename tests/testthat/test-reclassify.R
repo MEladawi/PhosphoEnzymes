@@ -113,7 +113,7 @@ test_that("a non-default GO accession warns instead of a silent no-op", {
   expect_false(any(grepl("silently inert", default_warnings)))
 })
 
-test_that("the default get_kinases() path runs and a term set with error rows warns, not stops", {
+test_that("term_sets= aborts on a correctness fault but only warns on a hygiene fault", {
   # Default path: no term_sets=, must work regardless of the Suggests being reachable.
   expect_s3_class(PhosphoEnzymes::get_kinases(), "data.frame")
 
@@ -122,12 +122,23 @@ test_that("the default get_kinases() path runs and a term set with error rows wa
   skip_if_not_installed("stringr")
   skip_if_not_installed("readr")
 
-  # A missing citation is an error-severity validation issue; for a USER term set it degrades to a
-  # warning and the reclassification proceeds (only the default set is held to a hard contract).
+  # Hygiene fault: a missing citation does not change which genes a rule matches,
+  # so for an inline USER term set it degrades to a warning and reclassification
+  # proceeds (only a shipped or persisted set is held to the cited-data contract).
   bad_ec <- PhosphoEnzymes::get_term_set("kinase", "ec")
   bad_ec$citation[1] <- ""
   expect_warning(
     out <- PhosphoEnzymes::get_kinases(term_sets = list(kinase_ec = bad_ec)),
-    "validation error")
+    "validation")
   expect_s3_class(out, "data.frame")
+
+  # Correctness fault: a term_id tagged both protein and nonprotein would call a
+  # gene "dual" off a contradiction, so the inline path must abort, not warn.
+  overlap_ec <- PhosphoEnzymes::get_term_set("kinase", "ec")
+  dup <- overlap_ec[overlap_ec$term_id == "2.7.10.-", , drop = FALSE]
+  dup$substrate <- "nonprotein"
+  overlap_ec <- rbind(overlap_ec, dup)
+  expect_error(
+    PhosphoEnzymes::get_kinases(term_sets = list(kinase_ec = overlap_ec)),
+    "validation error")
 })

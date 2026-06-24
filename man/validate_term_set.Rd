@@ -12,7 +12,13 @@ of term-set data frames to validate.}
 }
 \value{
 A \code{data.frame(severity, table, term_id, message)} -- one row per
-issue, empty when clean. \code{severity == "error"} rows are fatal.
+issue, empty when clean. \code{severity == "error"} rows flag structural or
+substrate-correctness faults and are always fatal. \code{severity == "warning"}
+rows flag provenance hygiene (a missing citation): fatal for a shipped or
+persisted term set, which must be fully cited because the term sets are
+themselves cited reference data, but advisory for an inline \verb{term_sets=}
+experiment, where a missing citation does not change which genes a rule
+matches.
 }
 \description{
 Mirrors the build-side structural checks (a subset -- no gene-set resolution

@@ -145,9 +145,12 @@ get_term_set <- function(class = c("kinase", "phosphatase"),
 
 #' Write a custom term-set table to disk
 #'
-#' Structurally validates `table` (via [validate_term_set()]) and, if it carries
-#' no error-severity issues, writes it as a CSV named `<class>_<type>_terms.csv`
-#' into `dir`. The returned path can later feed a reclassification override.
+#' Structurally validates `table` (via [validate_term_set()]) and, only if it
+#' passes -- structurally sound and fully cited -- writes it as a CSV named
+#' `<class>_<type>_terms.csv` into `dir`. A persisted term set is held to the
+#' shipped contract, so both error- and warning-severity issues block the write
+#' (unlike an inline `term_sets=` experiment, where a missing citation only
+#' warns). The returned path can later feed a reclassification override.
 #'
 #' @param class `"kinase"` or `"phosphatase"`.
 #' @param type `"ec"` or `"go"`.
@@ -166,9 +169,13 @@ set_term_set <- function(class = c("kinase", "phosphatase"),
   type <- match.arg(type)
   key <- paste0(class, "_", type)
   issues <- validate_term_set(stats::setNames(list(table), key))
-  if (any(issues$severity == "error")) {
-    msgs <- paste0("  - ", issues$message[issues$severity == "error"], collapse = "\n")
-    stop("term-set validation failed:\n", msgs)
+  # A persisted term set must be both structurally sound and fully cited, so
+  # error- AND warning-severity rows block the write.
+  bad <- issues[issues$severity %in% c("error", "warning"), , drop = FALSE]
+  if (nrow(bad)) {
+    msgs <- paste0("  - ", bad$message, collapse = "\n")
+    stop("term-set validation failed (a persisted term set must be ",
+         "structurally sound and fully cited):\n", msgs)
   }
   if (is.null(dir)) dir <- tools::R_user_dir("PhosphoEnzymes", "data")
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
@@ -195,7 +202,13 @@ set_term_set <- function(class = c("kinase", "phosphatase"),
 #' @param term_sets `NULL` (validate the four shipped defaults) or a named list
 #'   of term-set data frames to validate.
 #' @return A `data.frame(severity, table, term_id, message)` -- one row per
-#'   issue, empty when clean. `severity == "error"` rows are fatal.
+#'   issue, empty when clean. `severity == "error"` rows flag structural or
+#'   substrate-correctness faults and are always fatal. `severity == "warning"`
+#'   rows flag provenance hygiene (a missing citation): fatal for a shipped or
+#'   persisted term set, which must be fully cited because the term sets are
+#'   themselves cited reference data, but advisory for an inline `term_sets=`
+#'   experiment, where a missing citation does not change which genes a rule
+#'   matches.
 #' @examples
 #' validate_term_set()
 #' @export
@@ -224,9 +237,11 @@ validate_term_set <- function(term_sets = NULL) {
       next
     }
     blank <- function(v) is.na(v) | !nzchar(v)
-    # Every row must carry a citation.
+    # Every row should carry a citation. This is provenance hygiene, not a
+    # correctness fault -- an uncited rule still matches the same genes -- so it
+    # is a warning, fatal only for a shipped or persisted term set.
     no_cite <- tbl$term_id[blank(tbl$citation)]
-    for (t in no_cite) add("error", nm, t, "missing citation")
+    for (t in no_cite) add("warning", nm, t, "missing citation")
     # Non-protein rigor rows must name a substrate_subtype.
     is_rig <- tbl$role == "rigor+substrate"
     bad_np <- tbl$term_id[is_rig & tbl$substrate == "nonprotein" &
@@ -341,14 +356,28 @@ validate_term_set <- function(term_sets = NULL) {
   }
   tables <- .pe_normalize_term_sets(term_sets)
 
-  # User term sets degrade to warnings (only the default set hard-errors); summarize any error rows.
+  # Validation severity is tiered. "error" rows are structural or substrate-
+  # correctness faults (missing columns, substrate overlap, obsolete GO,
+  # malformed rigor/umbrella rows) that make the recompute wrong or undefined,
+  # so they abort even for an inline user term set. "warning" rows are provenance
+  # hygiene (a missing citation): they do not change which genes a rule matches,
+  # so an inline one-shot experiment only warns and proceeds.
   issues <- validate_term_set(tables)
+  fmt_issues <- function(rows) paste0(
+    "  - [", rows$table, "] ",
+    ifelse(is.na(rows$term_id), "", paste0(rows$term_id, ": ")),
+    rows$message, collapse = "\n")
   err <- issues[issues$severity == "error", , drop = FALSE]
   if (nrow(err)) {
-    warning("supplied term_sets has ", nrow(err), " validation error(s); proceeding anyway:\n",
-            paste0("  - [", err$table, "] ",
-                   ifelse(is.na(err$term_id), "", paste0(err$term_id, ": ")),
-                   err$message, collapse = "\n"), call. = FALSE)
+    stop("supplied term_sets has ", nrow(err),
+         " structural validation error(s); aborting reclassification:\n",
+         fmt_issues(err), call. = FALSE)
+  }
+  warn <- issues[issues$severity == "warning", , drop = FALSE]
+  if (nrow(warn)) {
+    warning("supplied term_sets has ", nrow(warn),
+            " advisory validation issue(s); proceeding:\n",
+            fmt_issues(warn), call. = FALSE)
   }
 
   # The Ensembl-keyed GMT is not shipped in the installed package, so GO membership is resolved at

@@ -25,9 +25,12 @@ set_term_set(
 The written file path, invisibly.
 }
 \description{
-Structurally validates \code{table} (via \code{\link[=validate_term_set]{validate_term_set()}}) and, if it carries
-no error-severity issues, writes it as a CSV named \verb{<class>_<type>_terms.csv}
-into \code{dir}. The returned path can later feed a reclassification override.
+Structurally validates \code{table} (via \code{\link[=validate_term_set]{validate_term_set()}}) and, only if it
+passes -- structurally sound and fully cited -- writes it as a CSV named
+\verb{<class>_<type>_terms.csv} into \code{dir}. A persisted term set is held to the
+shipped contract, so both error- and warning-severity issues block the write
+(unlike an inline \verb{term_sets=} experiment, where a missing citation only
+warns). The returned path can later feed a reclassification override.
 }
 \examples{
 \donttest{
