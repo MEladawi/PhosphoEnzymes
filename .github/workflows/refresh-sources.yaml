@@ -106,9 +106,9 @@ jobs:
         run: |
           set -euo pipefail
           check_date=$(date -u +%Y-%m-%d)
-          if [ "$JOB_STATUS" = "success" ]; then color=brightgreen; else color=red; fi
+          if [ "$JOB_STATUS" = "success" ]; then color=blueviolet; else color=red; fi
           work=$(mktemp -d)
-          printf '{"schemaVersion":1,"label":"sources checked","message":"%s","color":"%s"}\n' \
+          printf '{"schemaVersion":1,"label":"data sources","message":"refreshed %s","color":"%s"}\n' \
             "$check_date" "$color" > "$work/refresh-status.json"
           cd "$work"
           git init -q
