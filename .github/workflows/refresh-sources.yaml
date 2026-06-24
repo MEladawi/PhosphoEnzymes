@@ -26,7 +26,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: r-lib/actions/setup-pandoc@v2
 
@@ -90,3 +90,32 @@ jobs:
             --title "Source refresh failed on $(date -u +%Y-%m-%d)" \
             --body "The scheduled source refresh did not complete (build or QC gate failed). See the run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}. No release was prepared." \
             --label data-refresh || true
+
+      # Record every refresh CHECK -- pass or fail, change or not -- so the README
+      # can show when the sources were last examined. A PR opens only on a real
+      # change, so the masters and manifest carry no last-check date; this writes a
+      # small shields-endpoint JSON to a dedicated 'badges' branch on every run. The
+      # branch holds only this one file; it is force-pushed, so its history is
+      # disposable and never mixes with the package's main history.
+      - name: Record source-refresh check time
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          check_date=$(date -u +%Y-%m-%d)
+          if [ "$JOB_STATUS" = "success" ]; then color=brightgreen; else color=red; fi
+          work=$(mktemp -d)
+          printf '{"schemaVersion":1,"label":"sources checked","message":"%s","color":"%s"}\n' \
+            "$check_date" "$color" > "$work/refresh-status.json"
+          cd "$work"
+          git init -q
+          git checkout -q -b badges
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add refresh-status.json
+          git commit -q -m "chore(badges): source-refresh check ${check_date}"
+          git push -q --force \
+            "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" HEAD:badges
